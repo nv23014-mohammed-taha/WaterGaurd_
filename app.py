@@ -19,13 +19,14 @@ import random
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
-# Custom CSS for water background
-st.markdown("""
+st.markdown(
+    """
     <style>
     .stApp {
-        background-image: url("https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1350&q=80");
-        background-attachment: fixed;
+        background-image: url('water_bg.jpg');
         background-size: cover;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
     }
     .block-container {
         background-color: rgba(255, 255, 255, 0.85);
@@ -33,7 +34,9 @@ st.markdown("""
         border-radius: 10px;
     }
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
 st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
 
