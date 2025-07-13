@@ -26,7 +26,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
-
 # Simulate or use your actual data with 'timestamp' and 'usage_liters' columns
 def simulate_data():
     np.random.seed(42)
@@ -51,22 +50,14 @@ def simulate_data():
 # Extract date from timestamp (if not already done)
 df["date"] = df["timestamp"].dt.date
 
-# Let user pick a day (already declared below but needs to be used here)
 selected_day = st.sidebar.selectbox("📅 Select a Day to View Usage", sorted(df["date"].unique(), reverse=True))
-
-# Filter usage for that selected day
 df_selected_day = df[df["date"] == selected_day]
 day_used = df_selected_day["usage_liters"].sum()
-
-# Define daily quota
-daily_quota = 1500  # Adjust as needed
-
-# Remaining water and emoji
+daily_quota = 1500
 remaining = max(daily_quota - day_used, 0)
 emoji = "😊" if day_used <= daily_quota else "😞"
 progress = min(day_used / daily_quota, 1.0)
 
-# Display usage summary in sidebar
 st.sidebar.markdown("## 💧 Daily Water Usage Summary")
 st.sidebar.markdown(f"""
 **Date:** {selected_day}  
