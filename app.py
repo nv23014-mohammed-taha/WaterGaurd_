@@ -39,21 +39,7 @@ st.set_page_config(page_title="WaterGuard", layout="wide")
 def set_background(image_path):
     with open(image_path, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode()
-    st.markdown(
-        f"""
-        <style>
-        /* Background image with center and cover */
-        .stApp {{
-            background-image: url("data:image/jpg;base64,{encoded}");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            position: relative;
-            color: #f0f0f0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-        }}
+   
         /* Dark transparent overlay for readability */
         .stApp::before {{
             content: "";
