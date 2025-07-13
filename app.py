@@ -71,11 +71,7 @@ def set_background(image_path):
             color: #111;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }}
-        /* Headings styling */
-        h1, h2, h3 {{
-            font-weight: 700;
-            color: #023e8a;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+       
         }}
         /* Sidebar styling */
         [data-testid="stSidebar"] {{
