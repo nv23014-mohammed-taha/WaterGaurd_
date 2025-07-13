@@ -22,11 +22,12 @@ import pandas as pd
 import numpy as np
 
 
-sns.set_style("whitegrid")
-st.set_page_config(page_title="WaterGuard", layout="wide")
-
 import streamlit as st
 import base64
+import seaborn as sns
+
+sns.set_style("whitegrid")
+st.set_page_config(page_title="WaterGuard", layout="wide")
 
 def set_background(image_path):
     with open(image_path, "rb") as img_file:
@@ -97,20 +98,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown(
-    """
-    <div class="main">
-        <h1>💧 WaterGuard Prototype</h1>
-        <p>Smart water meter simulation for a house in Muharaq using AI to detect water consumption anomalies.</p>
-        <h3>Features:</h3>
-        <ul>
-            <li>One year of simulated hourly water usage data</li>
-            <li>Real-time daily, hourly, and monthly water usage visualization</li>
-            <li>AI-based anomaly detection to flag leaks or abnormal spikes</li>
-        </ul>
-    </div>
-    """,
-    unsafe_allow_html=True,
+
 
 # Simulate water usage data
 def simulate_data():
