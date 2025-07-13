@@ -22,39 +22,12 @@ import base64
 
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
-def get_base64_of_image(image_path):
-    with open(image_path, "rb") as img_file:
-        encoded = base64.b64encode(img_file.read()).decode()
-    return encoded
+import streamlit as st
+import pandas as pd
+import numpy as np
+import datetime
 
-def set_background(image_path):
-    encoded = get_base64_of_image(image_path)
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/jpg;base64,{encoded}");
-            background-size: cover;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            background-position: center;
-        }}
-        .block-container {{
-            background-color: rgba(255, 255, 255, 0.5);  /* translucent background */
-            border-radius: 15px;
-            padding: 2rem;
-            backdrop-filter: blur(6px); /* optional: frosted glass effect */
-        }}
-        header, footer, .css-18ni7ap.e8zbici2 {{  /* hide header/footer if needed */
-            background-color: transparent;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-set_background("water_bg.jpg")
-
+# Simulate or use your actual data with 'timestamp' and 'usage_liters' columns
 def simulate_data():
     np.random.seed(42)
     hours = 365 * 24
@@ -80,26 +53,43 @@ def simulate_data():
 
 df = simulate_data()
 
-# Calculate total water used so far (you can adjust timeframe here)
-total_used = df["usage_liters"].sum()
+# Get today's date (or allow user to select a date)
+today = datetime.date.today()
 
-# Define water quota (example: 500,000 liters per year)
-water_quota = 500_000
+# Filter data for today only
+df['date'] = df['timestamp'].dt.date
+df_today = df[df['date'] == today]
 
-water_left = max(water_quota - total_used, 0)
+# Sum today's total usage
+today_used = df_today['usage_liters'].sum()
 
-# Add water icon and usage summary in sidebar or top
-st.sidebar.markdown("## 💧 Water Usage Summary")
+# Define daily quota in liters (example: 1500 liters per day)
+daily_quota = 1500
+
+# Calculate water left today
+water_left = daily_quota - today_used
+
+# Decide emoji status
+if today_used <= daily_quota:
+    status_emoji = "😊"  # happy face
+else:
+    status_emoji = "😞"  # sad face
+
+# Display info in sidebar or main page
+st.sidebar.markdown("## 💧 Today's Water Usage")
 
 st.sidebar.markdown(f"""
-**Total Water Used:** {total_used:,.0f} liters  
-**Water Left:** {water_left:,.0f} liters  
-**Quota:** {water_quota:,} liters/year
+**Date:** {today}  
+**Used:** {today_used:,.0f} liters  
+**Remaining:** {max(water_left, 0):,.0f} liters  
+**Quota:** {daily_quota:,} liters  
+**Status:** {status_emoji}
 """)
 
-# Optional: Visual progress bar
-progress = total_used / water_quota
-st.sidebar.progress(min(progress, 1.0))
+# Optional: progress bar showing percent used (max 100%)
+progress = min(today_used / daily_quota, 1.0)
+st.sidebar.progress(progress)
+
 
 
 st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
