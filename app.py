@@ -22,33 +22,46 @@ st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
 st.write("""
 Upload your water usage data CSV file. The CSV must contain:
 - `timestamp`: datetime values
-- `usage_liters`: numeric water usage per hour
+- Usage columns like `usage_main_liters`, `usage_garden_liters`, `usage_kitchen_liters`, `usage_bathroom_liters`
 
-If no file is uploaded, simulated data will be used.
+If no file is uploaded, simulated data for a house in Muharaq will be used.
 """)
 
 uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
 
 def simulate_data():
     np.random.seed(42)
-    hours = 90 * 24
-    base_usage = np.random.normal(loc=12, scale=3, size=hours)
-    base_usage = np.clip(base_usage, 5, 25)
-    anomalies = np.random.choice(range(hours), size=15, replace=False)
-    for i in anomalies:
-        base_usage[i] *= np.random.uniform(2, 4)
-    dates = pd.date_range("2025-05-01", periods=hours, freq="H")
-    df = pd.DataFrame({"timestamp": dates, "usage_liters": base_usage})
+    hours = 365 * 24  # one year hourly data
+    date_range = pd.date_range(start='2024-01-01', periods=hours, freq='H')
+    usage_main = np.random.normal(12, 3, hours).clip(0, 50)
+    usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
+    usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
+    usage_bathroom = np.random.normal(4, 1.5, hours).clip(0, 15)
+    df = pd.DataFrame({
+        'timestamp': date_range,
+        'usage_main_liters': usage_main,
+        'usage_garden_liters': usage_garden,
+        'usage_kitchen_liters': usage_kitchen,
+        'usage_bathroom_liters': usage_bathroom,
+    })
+    df['house_id'] = 'Muharaq_House_001'
+    df['location'] = 'Muharaq'
+    df['sensor_status'] = np.random.choice(['OK', 'MAINTENANCE', 'ERROR'], size=hours, p=[0.95, 0.04, 0.01])
     return df
 
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file, parse_dates=["timestamp"])
+    df = pd.read_csv(uploaded_file, parse_dates=['timestamp'])
     st.success("File loaded successfully!")
 else:
-    st.info("Using simulated data")
+    st.info("Using default Muharaq house water usage data.")
     df = simulate_data()
 
 df["timestamp"] = pd.to_datetime(df["timestamp"])
+
+# Create total usage column summing all usage types
+df["usage_liters"] = df[
+    ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
+].sum(axis=1)
 
 model = IsolationForest(contamination=0.02, random_state=42)
 df["anomaly"] = model.fit_predict(df[["usage_liters"]])
