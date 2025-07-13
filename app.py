@@ -48,32 +48,35 @@ def simulate_data():
     df['usage_liters'] = df[
         ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
     ].sum(axis=1)
+# Extract date from timestamp (if not already done)
+df["date"] = df["timestamp"].dt.date
 
-    return df
+# Let user pick a day (already declared below but needs to be used here)
+selected_day = st.sidebar.selectbox("📅 Select a Day to View Usage", sorted(df["date"].unique(), reverse=True))
 
-df = simulate_data()
+# Filter usage for that selected day
+df_selected_day = df[df["date"] == selected_day]
+day_used = df_selected_day["usage_liters"].sum()
 
-# Get today's date (or allow user to select a date)
-today = datetime.date.today()
+# Define daily quota
+daily_quota = 1500  # Adjust as needed
 
-# Filter data for today only
-df['date'] = df['timestamp'].dt.date
-df_today = df[df['date'] == today]
+# Remaining water and emoji
+remaining = max(daily_quota - day_used, 0)
+emoji = "😊" if day_used <= daily_quota else "😞"
+progress = min(day_used / daily_quota, 1.0)
 
-# Sum today's total usage
-today_used = df_today['usage_liters'].sum()
+# Display usage summary in sidebar
+st.sidebar.markdown("## 💧 Daily Water Usage Summary")
+st.sidebar.markdown(f"""
+**Date:** {selected_day}  
+**Used:** {day_used:,.0f} liters  
+**Remaining:** {remaining:,.0f} liters  
+**Quota:** {daily_quota:,} liters  
+**Status:** {emoji}
+""")
+st.sidebar.progress(progress)
 
-# Define daily quota in liters (example: 1500 liters per day)
-daily_quota = 1500
-
-# Calculate water left today
-water_left = daily_quota - today_used
-
-# Decide emoji status
-if today_used <= daily_quota:
-    status_emoji = "😊"  # happy face
-else:
-    status_emoji = "😞"  # sad face
 
 # Display info in sidebar or main page
 st.sidebar.markdown("## 💧 Today's Water Usage")
