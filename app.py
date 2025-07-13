@@ -18,37 +18,37 @@ import random
 
 sns.set_style("whitegrid")
 
+st.set_page_config(page_title="WaterGuard Prototype", layout="wide")
+
 st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
 
-# Intro section
+# Cover image
+st.image("https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=1350&q=80", use_column_width=True)
+
+# Intro
 st.markdown("""
 ### Welcome to WaterGuard! 🚰
 
 This app monitors hourly water usage data from a house in Muharaq and uses AI to detect unusual spikes or leaks (anomalies) in water consumption.
 
 **Features:**
-- Upload your own water usage CSV or use default simulated data.
-- Visualize water usage hourly, daily, and monthly.
-- Detect anomalies that might indicate leaks or unexpected spikes.
-
-**How to use:**
-1. Upload your CSV file with timestamp and water usage columns, or use the default data.
-2. Select a date to explore hourly water usage and see detected anomalies highlighted.
-3. Review daily and monthly water consumption trends.
+- Simulated smart water meter data from a household in Muharaq
+- Visualizes water usage hourly, daily, and monthly
+- Detects leaks or abnormal consumption using AI anomaly detection
 
 *Water conservation starts with awareness — let’s guard your water usage together!*
 """)
 
-uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
-
+# Simulated data
 def simulate_data():
     np.random.seed(42)
-    hours = 365 * 24  # one year hourly data
+    hours = 365 * 24  # 1 year
     date_range = pd.date_range(start='2024-01-01', periods=hours, freq='H')
     usage_main = np.random.normal(12, 3, hours).clip(0, 50)
     usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
     usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
     usage_bathroom = np.random.normal(4, 1.5, hours).clip(0, 15)
+
     df = pd.DataFrame({
         'timestamp': date_range,
         'usage_main_liters': usage_main,
@@ -56,28 +56,24 @@ def simulate_data():
         'usage_kitchen_liters': usage_kitchen,
         'usage_bathroom_liters': usage_bathroom,
     })
+
     df['house_id'] = 'Muharaq_House_001'
     df['location'] = 'Muharaq'
     df['sensor_status'] = np.random.choice(['OK', 'MAINTENANCE', 'ERROR'], size=hours, p=[0.95, 0.04, 0.01])
-    
-    # Inject synthetic anomaly spikes (5% of data points)
+
+    # Inject anomalies
     num_anomalies = int(0.05 * len(df))
-    anomaly_indices = random.sample(range(len(df)), num_anomalies)
-    for i in anomaly_indices:
-        df.loc[i, ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]] *= np.random.uniform(2, 5)
-    
+    indices = random.sample(range(len(df)), num_anomalies)
+    for i in indices:
+        df.loc[i, ['usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters']] *= np.random.uniform(2, 5)
+
     return df
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file, parse_dates=['timestamp'])
-    st.success("File loaded successfully!")
-else:
-    st.info("Using default Muharaq house water usage data with synthetic anomalies.")
-    df = simulate_data()
+# Use simulated data only
+df = simulate_data()
 
+# Preprocessing
 df["timestamp"] = pd.to_datetime(df["timestamp"])
-
-# Create total usage column summing all usage types
 df["usage_liters"] = df[
     ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
 ].sum(axis=1)
@@ -86,24 +82,23 @@ model = IsolationForest(contamination=0.05, random_state=42)
 df["anomaly"] = model.fit_predict(df[["usage_liters"]])
 df["anomaly"] = df["anomaly"].map({1: "Normal", -1: "Anomaly"})
 
-anomaly_count = df["anomaly"].value_counts().get("Anomaly", 0)
-st.write(f"Detected anomalies (possible leaks/spikes): **{anomaly_count}**")
+st.write(f"💥 **Detected anomalies (possible leaks/spikes): {df['anomaly'].value_counts().get('Anomaly', 0)}**")
 
-st.subheader("Anomaly Details")
+st.subheader("🚨 Anomaly Details")
 st.dataframe(df[df["anomaly"] == "Anomaly"][["timestamp", "usage_liters"]])
 
-# Select day for hourly plot
+# Plot hourly for selected day
 df["date"] = df["timestamp"].dt.date
-unique_dates = sorted(df["date"].unique())
-selected_day = st.selectbox("Select a date to view hourly usage", unique_dates)
+df["hour"] = df["timestamp"].dt.time
 
+selected_day = st.selectbox("📅 Select a date to view hourly usage", sorted(df["date"].unique()))
 df_hourly = df[df["date"] == selected_day]
 
-fig1, ax1 = plt.subplots(figsize=(14,6))
-sns.lineplot(data=df_hourly, x="timestamp", y="usage_liters", ax=ax1, label="Usage")
+fig1, ax1 = plt.subplots(figsize=(14, 6))
+sns.lineplot(data=df_hourly, x="hour", y="usage_liters", ax=ax1, label="Usage")
 sns.scatterplot(
     data=df_hourly[df_hourly["anomaly"] == "Anomaly"],
-    x="timestamp",
+    x="hour",
     y="usage_liters",
     color="red",
     marker="X",
@@ -112,30 +107,29 @@ sns.scatterplot(
     ax=ax1
 )
 ax1.set_title(f"Hourly Water Usage for {selected_day}")
-ax1.set_xlabel("Hour")
+ax1.set_xlabel("Time (Hour)")
 ax1.set_ylabel("Liters per Hour")
 ax1.tick_params(axis="x", rotation=45)
 ax1.legend()
 st.pyplot(fig1)
 
-# Daily plot
+# Daily usage
 df_daily = df.set_index("timestamp").resample("D")["usage_liters"].sum().reset_index()
-
-fig2, ax2 = plt.subplots(figsize=(14,5))
+fig2, ax2 = plt.subplots(figsize=(14, 5))
 sns.lineplot(data=df_daily, x="timestamp", y="usage_liters", ax=ax2)
-ax2.set_title("Daily Water Usage (Total per Day)")
+ax2.set_title("Daily Water Usage (Liters per Day)")
 ax2.set_xlabel("Date")
-ax2.set_ylabel("Liters per Day")
+ax2.set_ylabel("Liters")
 ax2.tick_params(axis="x", rotation=45)
 st.pyplot(fig2)
 
-# Monthly plot
+# Monthly usage
 df_monthly = df.set_index("timestamp").resample("M")["usage_liters"].sum().reset_index()
-
-fig3, ax3 = plt.subplots(figsize=(12,5))
+fig3, ax3 = plt.subplots(figsize=(14, 5))
 sns.lineplot(data=df_monthly, x="timestamp", y="usage_liters", ax=ax3)
-ax3.set_title("Monthly Water Usage (Total per Month)")
+ax3.set_title("Monthly Water Usage (Liters per Month)")
 ax3.set_xlabel("Month")
-ax3.set_ylabel("Liters per Month")
+ax3.set_ylabel("Liters")
 ax3.tick_params(axis="x", rotation=45)
 st.pyplot(fig3)
+
