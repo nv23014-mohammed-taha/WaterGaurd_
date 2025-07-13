@@ -29,6 +29,10 @@ import streamlit as st
 import base64
 import seaborn as sns
 
+import streamlit as st
+import base64
+import seaborn as sns
+
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
@@ -71,8 +75,6 @@ def set_background(image_path):
             color: #111;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }}
-       
-        }}
         /* Sidebar styling */
         [data-testid="stSidebar"] {{
             background: rgba(255, 255, 255, 0.95);
@@ -88,7 +90,7 @@ def set_background(image_path):
 # Set the background image
 set_background("water_bg.jpg")
 
-# Main content with styled container — only once!
+# Main content - single heading and features list, no welcome message
 st.markdown(
     """
     <div class="main">
@@ -104,7 +106,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
 
 # Simulate water usage data
 def simulate_data():
