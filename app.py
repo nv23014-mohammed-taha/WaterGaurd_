@@ -17,26 +17,40 @@ import seaborn as sns
 import random
 
 sns.set_style("whitegrid")
+
+import base64
+
+# Set page settings
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
-st.markdown(
-    """
+# Encode image to base64
+def get_base64_of_image(image_path):
+    with open(image_path, "rb") as img_file:
+        encoded = base64.b64encode(img_file.read()).decode()
+    return encoded
+
+def set_background(image_path):
+    encoded = get_base64_of_image(image_path)
+    css = f"""
     <style>
-    .stApp {
-        background-image: url('water_bg.jpg');
+    .stApp {{
+        background-image: url("data:image/jpg;base64,{encoded}");
         background-size: cover;
         background-attachment: fixed;
         background-repeat: no-repeat;
-    }
-    .block-container {
+    }}
+    .block-container {{
         background-color: rgba(255, 255, 255, 0.85);
         padding: 2rem;
         border-radius: 10px;
-    }
+    }}
     </style>
-    """,
-    unsafe_allow_html=True
-)
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+# ✅ Set your local image as background
+set_background("water_bg.jpg")
+
 
 st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
 
