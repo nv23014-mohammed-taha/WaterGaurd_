@@ -15,18 +15,12 @@ from sklearn.ensemble import IsolationForest
 import matplotlib.pyplot as plt
 import seaborn as sns
 import random
+import datetime
 
 sns.set_style("whitegrid")
-
-import base64
-
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import datetime
-# Simulate or use your actual data with 'timestamp' and 'usage_liters' columns
+# Simulate water usage data
 def simulate_data():
     np.random.seed(42)
     hours = 365 * 24
@@ -47,9 +41,15 @@ def simulate_data():
     df['usage_liters'] = df[
         ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
     ].sum(axis=1)
-# Extract date from timestamp (if not already done)
+
+    return df
+
+# Load data
+df = simulate_data()
+df["timestamp"] = pd.to_datetime(df["timestamp"])
 df["date"] = df["timestamp"].dt.date
 
+# Sidebar: select a day
 selected_day = st.sidebar.selectbox("📅 Select a Day to View Usage", sorted(df["date"].unique(), reverse=True))
 df_selected_day = df[df["date"] == selected_day]
 day_used = df_selected_day["usage_liters"].sum()
@@ -58,6 +58,7 @@ remaining = max(daily_quota - day_used, 0)
 emoji = "😊" if day_used <= daily_quota else "😞"
 progress = min(day_used / daily_quota, 1.0)
 
+# Show summary for selected day
 st.sidebar.markdown("## 💧 Daily Water Usage Summary")
 st.sidebar.markdown(f"""
 **Date:** {selected_day}  
@@ -68,10 +69,14 @@ st.sidebar.markdown(f"""
 """)
 st.sidebar.progress(progress)
 
+# Today's usage summary
+today = datetime.date.today()
+df_today = df[df["date"] == today]
+today_used = df_today["usage_liters"].sum()
+water_left = daily_quota - today_used
+status_emoji = "😊" if today_used <= daily_quota else "😞"
 
-# Display info in sidebar or main page
 st.sidebar.markdown("## 💧 Today's Water Usage")
-
 st.sidebar.markdown(f"""
 **Date:** {today}  
 **Used:** {today_used:,.0f} liters  
@@ -79,10 +84,7 @@ st.sidebar.markdown(f"""
 **Quota:** {daily_quota:,} liters  
 **Status:** {status_emoji}
 """)
-
-# Optional: progress bar showing percent used (max 100%)
-progress = min(today_used / daily_quota, 1.0)
-st.sidebar.progress(progress)
+st.sidebar.progress(min(today_used / daily_quota, 1.0))
 
 
 
