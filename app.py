@@ -173,18 +173,7 @@ st.sidebar.progress(progress)
 
 
 
-st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
 
-st.markdown("""
-### Welcome to WaterGuard! 🚰
-
-Smart water meter simulation for a house in Muharaq using AI to detect spikes or leaks in water consumption.
-
-**Features:**
-- One year of simulated smart meter water data
-- Hourly, daily, and monthly usage visualizations
-- AI-based anomaly detection (leaks, abnormal patterns)
-""")
 
 # Simulated data
 def simulate_data():
