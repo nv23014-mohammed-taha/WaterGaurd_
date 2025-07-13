@@ -94,19 +94,22 @@ set_background("water_bg.jpg")
 # Main content - single heading and features list, no welcome message
 st.markdown(
     """
-    <div class="main">
-        <h1>💧 WaterGuard Prototype</h1>
-        <p>Smart water meter simulation for a house in Muharaq using AI to detect water consumption anomalies.</p>
-        <h3>Features:</h3>
-        <ul>
-            <li>One year of simulated hourly water usage data</li>
-            <li>Real-time daily, hourly, and monthly water usage visualization</li>
-            <li>AI-based anomaly detection to flag leaks or abnormal spikes</li>
+    <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem; border-radius: 15px; max-width: 900px; margin: 3rem auto; color: #111; box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <h1 style="color: #023e8a; font-weight: 700;">💧 WaterGuard Prototype</h1>
+        <p style="font-size: 1.1rem; line-height: 1.5;">
+            We simulate a smart water meter system for a home in Muharaq that uses advanced AI to monitor and detect unusual water usage — helping save water and catch leaks early.
+        </p>
+        <h3 style="color: #023e8a; font-weight: 700;">Key Features:</h3>
+        <ul style="font-size: 1rem; line-height: 1.5;">
+            <li><strong>One year of detailed hourly water usage data</strong> — realistic and easy to analyze</li>
+            <li><strong>Interactive daily, hourly, and monthly usage charts</strong> — understand your consumption trends at a glance</li>
+            <li><strong>AI-powered alerts for leaks and unusual spikes</strong> — detect problems early and avoid water waste</li>
         </ul>
     </div>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
+
 
 
 # Simulate water usage data
