@@ -25,6 +25,10 @@ import streamlit as st
 import base64
 import seaborn as sns
 
+import streamlit as st
+import base64
+import seaborn as sns
+
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
@@ -85,10 +89,10 @@ def set_background(image_path):
         unsafe_allow_html=True,
     )
 
-# Call this function with your local image path (must be in the same folder or provide relative path)
+# Set the background image
 set_background("water_bg.jpg")
 
-# Main content with styled container
+# Main content with styled container — only once!
 st.markdown(
     """
     <div class="main">
