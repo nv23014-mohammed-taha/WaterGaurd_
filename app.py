@@ -25,13 +25,15 @@ import numpy as np
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
+import streamlit as st
+import base64
+
 def set_background(image_path):
     with open(image_path, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode()
     st.markdown(
         f"""
         <style>
-        /* Full page background image */
         .stApp {{
             background-image: url("data:image/jpg;base64,{encoded}");
             background-size: cover;
@@ -42,8 +44,6 @@ def set_background(image_path):
             color: #f0f0f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }}
-
-        /* Dark overlay to mute background */
         .stApp::before {{
             content: "";
             position: fixed;
@@ -54,8 +54,6 @@ def set_background(image_path):
             background: rgba(0, 0, 0, 0.5);
             z-index: -1;
         }}
-
-        /* Main content container styling */
         .main {{
             background: rgba(255, 255, 255, 0.85);
             border-radius: 15px;
@@ -65,52 +63,39 @@ def set_background(image_path):
             color: #111;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }}
-
-        /* Headings style */
         h1, h2, h3 {{
             font-weight: 700;
             color: #023e8a;
             text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }}
-
-        /* Sidebar tweaks */
         [data-testid="stSidebar"] {{
             background: rgba(255, 255, 255, 0.95);
             border-radius: 0 15px 15px 0;
             padding: 1rem 1.5rem;
             box-shadow: 2px 0 12px rgba(0,0,0,0.1);
         }}
-
-        /* Scrollbar styling for better look */
-        ::-webkit-scrollbar {{
-            width: 8px;
-        }}
-        ::-webkit-scrollbar-track {{
-            background: #f1f1f1;
-        }}
-        ::-webkit-scrollbar-thumb {{
-            background: #888;
-            border-radius: 4px;
-        }}
-        ::-webkit-scrollbar-thumb:hover {{
-            background: #555;
-        }}
-
-        /* Button style overrides */
-        button[kind="primary"] {{
-            background-color: #0077b6 !important;
-            border-radius: 8px !important;
-            padding: 0.6rem 1.2rem !important;
-            font-weight: 600 !important;
-            box-shadow: 0 4px 12px rgba(0, 119, 182, 0.4) !important;
-        }}
-
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-set_background("water_bg.jpg")  # Your local image here
+set_background("water_bg.jpg")
+
+st.markdown(
+    """
+    <div class="main">
+        <h1>💧 WaterGuard Prototype</h1>
+        <p>Smart water meter simulation for a house in Muharaq using AI to detect water consumption anomalies.</p>
+        <h3>Features:</h3>
+        <ul>
+            <li>One year of simulated hourly water usage data</li>
+            <li>Real-time daily, hourly, and monthly water usage visualization</li>
+            <li>AI-based anomaly detection to flag leaks or abnormal spikes</li>
+        </ul>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown(
     """
