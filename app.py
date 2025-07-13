@@ -25,6 +25,7 @@ def simulate_data():
     np.random.seed(42)
     hours = 365 * 24
     date_range = pd.date_range(start='2024-01-01', periods=hours, freq='H')
+    
     usage_main = np.random.normal(12, 3, hours).clip(0, 50)
     usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
     usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
@@ -42,12 +43,24 @@ def simulate_data():
         ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
     ].sum(axis=1)
 
+    df['date'] = df['timestamp'].dt.date
+
+    # Randomly boost usage for ~30% of days to go over quota
+    unique_days = df['date'].unique()
+    high_usage_days = np.random.choice(unique_days, size=int(len(unique_days) * 0.3), replace=False)
+    for day in high_usage_days:
+        df.loc[df['date'] == day, ['usage_main_liters', 'usage_garden_liters',
+                                   'usage_kitchen_liters', 'usage_bathroom_liters']] *= np.random.uniform(1.5, 2)
+
+        df['usage_liters'] = df[
+            ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
+        ].sum(axis=1)
+
     return df
 
 # Load data
 df = simulate_data()
 df["timestamp"] = pd.to_datetime(df["timestamp"])
-df["date"] = df["timestamp"].dt.date
 
 # Sidebar: select a day
 selected_day = st.sidebar.selectbox("📅 Select a Day to View Usage", sorted(df["date"].unique(), reverse=True))
@@ -68,23 +81,6 @@ st.sidebar.markdown(f"""
 **Status:** {emoji}
 """)
 st.sidebar.progress(progress)
-
-# Today's usage summary
-today = datetime.date.today()
-df_today = df[df["date"] == today]
-today_used = df_today["usage_liters"].sum()
-water_left = daily_quota - today_used
-status_emoji = "😊" if today_used <= daily_quota else "😞"
-
-st.sidebar.markdown("## 💧 Today's Water Usage")
-st.sidebar.markdown(f"""
-**Date:** {today}  
-**Used:** {today_used:,.0f} liters  
-**Remaining:** {max(water_left, 0):,.0f} liters  
-**Quota:** {daily_quota:,} liters  
-**Status:** {status_emoji}
-""")
-st.sidebar.progress(min(today_used / daily_quota, 1.0))
 
 
 
