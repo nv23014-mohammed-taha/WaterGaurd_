@@ -20,10 +20,8 @@ sns.set_style("whitegrid")
 
 import base64
 
-# Set page settings
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
-# Encode image to base64
 def get_base64_of_image(image_path):
     with open(image_path, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode()
@@ -31,25 +29,33 @@ def get_base64_of_image(image_path):
 
 def set_background(image_path):
     encoded = get_base64_of_image(image_path)
-    css = f"""
-    <style>
-    .stApp {{
-        background-image: url("data:image/jpg;base64,{encoded}");
-        background-size: cover;
-        background-attachment: fixed;
-        background-repeat: no-repeat;
-    }}
-    .block-container {{
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 2rem;
-        border-radius: 10px;
-    }}
-    </style>
-    """
-    st.markdown(css, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpg;base64,{encoded}");
+            background-size: cover;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-position: center;
+        }}
+        .block-container {{
+            background-color: rgba(255, 255, 255, 0.5);  /* translucent background */
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(6px); /* optional: frosted glass effect */
+        }}
+        header, footer, .css-18ni7ap.e8zbici2 {{  /* hide header/footer if needed */
+            background-color: transparent;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-# ✅ Set your local image as background
 set_background("water_bg.jpg")
+
+
 
 
 st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
