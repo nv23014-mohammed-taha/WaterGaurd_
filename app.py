@@ -21,7 +21,6 @@ import base64
 import pandas as pd
 import numpy as np
 
-
 import streamlit as st
 import base64
 import seaborn as sns
@@ -35,6 +34,7 @@ def set_background(image_path):
     st.markdown(
         f"""
         <style>
+        /* Background image with center and cover */
         .stApp {{
             background-image: url("data:image/jpg;base64,{encoded}");
             background-size: cover;
@@ -44,7 +44,9 @@ def set_background(image_path):
             position: relative;
             color: #f0f0f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
         }}
+        /* Dark transparent overlay for readability */
         .stApp::before {{
             content: "";
             position: fixed;
@@ -52,36 +54,41 @@ def set_background(image_path):
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.45);
             z-index: -1;
         }}
+        /* Main content container */
         .main {{
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
             padding: 2rem 3rem;
-            margin: 2rem auto;
+            margin: 3rem auto;
             max-width: 900px;
             color: #111;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }}
+        /* Headings styling */
         h1, h2, h3 {{
             font-weight: 700;
             color: #023e8a;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
         }}
+        /* Sidebar styling */
         [data-testid="stSidebar"] {{
             background: rgba(255, 255, 255, 0.95);
             border-radius: 0 15px 15px 0;
             padding: 1rem 1.5rem;
-            box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+# Call this function with your local image path (must be in the same folder or provide relative path)
 set_background("water_bg.jpg")
 
+# Main content with styled container
 st.markdown(
     """
     <div class="main">
@@ -97,7 +104,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
 
 
 # Simulate water usage data
