@@ -55,7 +55,51 @@ def set_background(image_path):
 
 set_background("water_bg.jpg")
 
+def simulate_data():
+    np.random.seed(42)
+    hours = 365 * 24
+    date_range = pd.date_range(start='2024-01-01', periods=hours, freq='H')
+    usage_main = np.random.normal(12, 3, hours).clip(0, 50)
+    usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
+    usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
+    usage_bathroom = np.random.normal(4, 1.5, hours).clip(0, 15)
 
+    df = pd.DataFrame({
+        'timestamp': date_range,
+        'usage_main_liters': usage_main,
+        'usage_garden_liters': usage_garden,
+        'usage_kitchen_liters': usage_kitchen,
+        'usage_bathroom_liters': usage_bathroom,
+    })
+
+    df['usage_liters'] = df[
+        ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
+    ].sum(axis=1)
+
+    return df
+
+df = simulate_data()
+
+# Calculate total water used so far (you can adjust timeframe here)
+total_used = df["usage_liters"].sum()
+
+# Define water quota (example: 500,000 liters per year)
+water_quota = 500_000
+
+water_left = max(water_quota - total_used, 0)
+
+# Add water icon and usage summary in sidebar or top
+st.sidebar.markdown("## 💧 Water Usage Summary")
+
+st.sidebar.markdown(f"""
+**Total Water Used:** {total_used:,.0f} liters  
+**Water Left:** {water_left:,.0f} liters  
+**Quota:** {water_quota:,} liters/year
+""")
+
+# Optional: Visual progress bar
+progress = total_used / water_quota
+st.sidebar.progress(min(progress, 1.0))
 
 
 st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
