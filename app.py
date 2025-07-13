@@ -19,6 +19,34 @@ import datetime
 
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
+def set_background(jpg_file):
+    with open(jpg_file, "rb") as image_file:
+        encoded = base64.b64encode(image_file.read()).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpeg;base64,{encoded}");
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: transparent;
+        }}
+
+        .main {{
+            background-color: rgba(255, 255, 255, 0.0) !important;
+        }}
+
+        .css-1d391kg {{
+            background-color: rgba(255, 255, 255, 0.0) !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+set_background("water_bg.jpg")
 
 # Simulate water usage data
 def simulate_data():
