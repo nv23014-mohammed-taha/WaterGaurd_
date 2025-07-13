@@ -16,6 +16,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import random
 import datetime
+import streamlit as st
+import base64
+import pandas as pd
+import numpy as np
+
 
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
