@@ -14,17 +14,29 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 import matplotlib.pyplot as plt
 import seaborn as sns
+import random
 
 sns.set_style("whitegrid")
 
 st.title("💧 WaterGuard Prototype: Water Usage Anomaly Detection")
 
-st.write("""
-Upload your water usage data CSV file. The CSV must contain:
-- `timestamp`: datetime values
-- Usage columns like `usage_main_liters`, `usage_garden_liters`, `usage_kitchen_liters`, `usage_bathroom_liters`
+# Intro section
+st.markdown("""
+### Welcome to WaterGuard! 🚰
 
-If no file is uploaded, simulated data for a house in Muharaq will be used.
+This app monitors hourly water usage data from a house in Muharaq and uses AI to detect unusual spikes or leaks (anomalies) in water consumption.
+
+**Features:**
+- Upload your own water usage CSV or use default simulated data.
+- Visualize water usage hourly, daily, and monthly.
+- Detect anomalies that might indicate leaks or unexpected spikes.
+
+**How to use:**
+1. Upload your CSV file with timestamp and water usage columns, or use the default data.
+2. Select a date to explore hourly water usage and see detected anomalies highlighted.
+3. Review daily and monthly water consumption trends.
+
+*Water conservation starts with awareness — let’s guard your water usage together!*
 """)
 
 uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
@@ -47,13 +59,20 @@ def simulate_data():
     df['house_id'] = 'Muharaq_House_001'
     df['location'] = 'Muharaq'
     df['sensor_status'] = np.random.choice(['OK', 'MAINTENANCE', 'ERROR'], size=hours, p=[0.95, 0.04, 0.01])
+    
+    # Inject synthetic anomaly spikes (5% of data points)
+    num_anomalies = int(0.05 * len(df))
+    anomaly_indices = random.sample(range(len(df)), num_anomalies)
+    for i in anomaly_indices:
+        df.loc[i, ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]] *= np.random.uniform(2, 5)
+    
     return df
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, parse_dates=['timestamp'])
     st.success("File loaded successfully!")
 else:
-    st.info("Using default Muharaq house water usage data.")
+    st.info("Using default Muharaq house water usage data with synthetic anomalies.")
     df = simulate_data()
 
 df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -63,7 +82,7 @@ df["usage_liters"] = df[
     ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
 ].sum(axis=1)
 
-model = IsolationForest(contamination=0.02, random_state=42)
+model = IsolationForest(contamination=0.05, random_state=42)
 df["anomaly"] = model.fit_predict(df[["usage_liters"]])
 df["anomaly"] = df["anomaly"].map({1: "Normal", -1: "Anomaly"})
 
