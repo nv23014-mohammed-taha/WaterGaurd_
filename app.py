@@ -72,6 +72,12 @@ if lang == "en":
                 <li><strong>For Businesses:</strong> Track usage across multiple branches to ensure water efficiency and cost control.</li>
                 <li><strong>For Factories:</strong> Manage high-volume water consumption with automated alerts for excessive or irregular usage.</li>
             </ul>
+            <h3 style="color: #023e8a; font-weight: 700;">Why WaterGuard?</h3>
+            <ul style="font-size: 1rem; line-height: 1.6;">
+                <li><strong>Homes:</strong> Save water and money with ease.</li>
+                <li><strong>Businesses:</strong> Optimize usage, reduce costs efficiently.</li>
+                <li><strong>Factories:</strong> Prevent waste, control industrial water consumption.</li>
+            </ul>
         </div>
     """, unsafe_allow_html=True)
 else:
@@ -87,9 +93,14 @@ else:
                 <li><strong>للشركات:</strong> تتبع الاستهلاك في الفروع المختلفة لضمان كفاءة المياه والتحكم في التكاليف.</li>
                 <li><strong>للمصانع:</strong> إدارة استهلاك المياه بكميات كبيرة باستخدام تنبيهات تلقائية للاستخدام الزائد أو غير المنتظم.</li>
             </ul>
+            <h3 style="color: #023e8a; font-weight: 700;">لماذا ووتر جارد؟</h3>
+            <ul style="font-size: 1rem; line-height: 1.6;">
+                <li><strong>للمنازل:</strong> وفر المياه والمال بسهولة وفعالية.</li>
+                <li><strong>للشركات:</strong> حسّن الاستهلاك وقلل التكاليف بذكاء.</li>
+                <li><strong>للمصانع:</strong> منع الهدر والتحكم بالاستهلاك الصناعي.</li>
+            </ul>
         </div>
     """, unsafe_allow_html=True)
-
 
 # ---------- DATA SIMULATION ---------- #
 @st.cache_data
