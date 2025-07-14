@@ -235,10 +235,51 @@ else:
 
 st.sidebar.progress(min(usage_ratio, 1.0))
 
-# Add screen reader button in the sidebar
-with st.sidebar:
-    screen_reader_button(lang)
+# Add screen reader button (always reads in English)
+from streamlit.components.v1 import html
 
+def screen_reader_button():
+    button_html = f"""
+    <button onclick="readPage()" style="
+        background-color:#023e8a; 
+        color:white; 
+        border:none; 
+        padding:10px 20px; 
+        border-radius:10px; 
+        cursor:pointer;
+        font-size:1rem;
+        margin-top: 1rem;">
+        🔊 Activate Screen Reader
+    </button>
+    <script>
+    function readPage() {{
+        const synth = window.speechSynthesis;
+        if (synth.speaking) {{
+            synth.cancel();
+        }}
+        const app = document.querySelector('.stApp');
+        let text = '';
+        if (app) {{
+            const walker = document.createTreeWalker(app, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while(node = walker.nextNode()) {{
+                if(node.textContent.trim() !== '') {{
+                    text += node.textContent.trim() + '. ';
+                }}
+            }}
+        }} else {{
+            text = "Content not found.";
+        }}
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';  // Always English
+        synth.speak(utterance);
+    }}
+    </script>
+    """
+    html(button_html, height=60)
+
+screen_reader_button()
 
 # ---------- ALERTS ---------- #
 high_usage_threshold = daily_quota * 0.9
