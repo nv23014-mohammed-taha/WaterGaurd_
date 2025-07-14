@@ -235,6 +235,11 @@ else:
 
 st.sidebar.progress(min(usage_ratio, 1.0))
 
+# Add screen reader button in the sidebar
+with st.sidebar:
+    screen_reader_button(lang)
+
+
 # ---------- ALERTS ---------- #
 high_usage_threshold = daily_quota * 0.9
 
