@@ -101,6 +101,9 @@ else:
             </ul>
         </div>
     """, unsafe_allow_html=True)
+   from streamlit.components.v1 import html
+# ... other imports at the top ...
+
 def screen_reader_button(lang):
     button_html = f"""
     <button onclick="readPage()" style="
@@ -120,11 +123,9 @@ def screen_reader_button(lang):
         if (synth.speaking) {{
             synth.cancel();
         }}
-        // Grab all visible text inside .stApp container
         const app = document.querySelector('.stApp');
         let text = '';
         if (app) {{
-            // Get all text nodes inside .stApp and concatenate their text content
             const walker = document.createTreeWalker(app, NodeFilter.SHOW_TEXT, null, false);
             let node;
             while(node = walker.nextNode()) {{
@@ -136,17 +137,14 @@ def screen_reader_button(lang):
             text = "Content not found.";
         }}
 
-        // Create utterance and set language
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = '{ "en-US" if lang == "en" else "ar-SA" }';
         synth.speak(utterance);
     }}
     </script>
     """
-    components.html(button_html, height=60)
-
-# Add the screen reader button here, below intro:
-screen_reader_button(lang)
+    html(button_html, height=60)
+Summary:
 # ---------- DATA SIMULATION ---------- #
 @st.cache_data
 def simulate_data():
