@@ -145,7 +145,7 @@ def screen_reader_button(lang):
     </script>
     """
     html(button_html, height=60)
-Summary:
+
 # ---------- DATA SIMULATION ---------- #
 @st.cache_data
 def simulate_data():
