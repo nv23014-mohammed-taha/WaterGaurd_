@@ -14,7 +14,7 @@ sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
 # ---------- LANGUAGE TOGGLE ---------- #
-language = st.sidebar.radio("🌐 Language / اللغة", ["English", "العربية"], key="language_radio")
+language = st.sidebar.radio("🌐 Language / اللغة", ["English", "العربية"])
 lang = "ar" if language == "العربية" else "en"
 
 # ---------- BACKGROUND IMAGE ---------- #
@@ -59,10 +59,6 @@ def set_background(image_path):
 set_background("water_bg.jpg")
 
 # ---------- INTRO SECTION ---------- #
-
-# Wrap main content for screen reader navigation
-st.markdown('<main role="main" tabindex="-1">', unsafe_allow_html=True)
-
 if lang == "en":
     st.markdown("""
         <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem; border-radius: 15px; max-width: 900px; margin: 3rem auto; color: #111; box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
@@ -195,18 +191,16 @@ else:
 
 st.sidebar.progress(min(usage_ratio, 1.0))
 
-# ---------- ALERTS WITH ACCESSIBLE LIVE REGION ---------- #
+# ---------- ALERTS ---------- #
 high_usage_threshold = daily_quota * 0.9
 
 if day_usage > high_usage_threshold:
     alert_text_en = "🚨 High water consumption detected today!"
     alert_text_ar = "🚨 تم الكشف عن استهلاك مياه مرتفع اليوم!"
-    alert_html_en = f'<div role="alert" aria-live="assertive" style="color: #9f3a38; font-weight: 700;">{alert_text_en}</div>'
-    alert_html_ar = f'<div role="alert" aria-live="assertive" style="color: #9f3a38; font-weight: 700; direction: rtl; text-align: right;">{alert_text_ar}</div>'
     if lang == 'en':
-        st.sidebar.markdown(alert_html_en, unsafe_allow_html=True)
+        st.sidebar.warning(alert_text_en)
     else:
-        st.sidebar.markdown(alert_html_ar, unsafe_allow_html=True)
+        st.sidebar.warning(alert_text_ar)
 
 # ---------- ANOMALIES TABLE ---------- #
 df_anomalies = df[df['anomaly'] == 'Anomaly']
@@ -298,16 +292,12 @@ st.download_button(
     mime='text/csv'
 )
 
-# --------- Real-Time Notifications & Alerts with aria-live --------- #
+# --------- Real-Time Notifications & Alerts --------- #
 if "Anomaly" in df_day["anomaly"].values:
-    alert_main_en = '🚨 High water consumption anomaly detected today!'
-    alert_main_ar = '🚨 تم الكشف عن خلل استهلاك المياه اليوم!'
-    alert_main_html_en = f'<div role="alert" aria-live="assertive" style="color: #9f3a38; font-weight: 700;">{alert_main_en}</div>'
-    alert_main_html_ar = f'<div role="alert" aria-live="assertive" style="color: #9f3a38; font-weight: 700; direction: rtl; text-align: right;">{alert_main_ar}</div>'
     if lang == 'en':
-        st.markdown(alert_main_html_en, unsafe_allow_html=True)
+        st.warning("🚨 High water consumption anomaly detected today!")
     else:
-        st.markdown(alert_main_html_ar, unsafe_allow_html=True)
+        st.warning("🚨 تم الكشف عن خلل استهلاك المياه اليوم!")
 
 # --------- Water Conservation Tips --------- #
 if lang == 'en':
@@ -326,61 +316,181 @@ else:
     - استخدم الأجهزة والتركيبات الموفرة للمياه.
     - اجمع مياه الأمطار للري.
     - أغلق الصنابير عند عدم الاستخدام.
-    - راقب استهلاكك للكشف عن أي تغييرات.
+    - راقب استهلاكك للكشف عن التغيرات.
     """)
 
-# --------- FAQ Section with aria roles --------- #
-faq_id = "faq_section"
-if lang == 'en':
-    st.markdown(f'<section role="region" aria-labelledby="{faq_id}"><h2 id="{faq_id}">❓ Frequently Asked Questions</h2></section>', unsafe_allow_html=True)
+# --------- FAQ Section (Translucent white block + expanders) --------- #
+
+# ---------- FAQ SECTION AT END ---------- #
+if lang == "en":
     st.markdown("""
-    <details>
-      <summary><strong>How does WaterGuard detect leaks?</strong></summary>
-      <p>WaterGuard uses AI to analyze water usage patterns and identify anomalies that suggest leaks.</p>
-    </details>
-    <details>
-      <summary><strong>Can I use WaterGuard for commercial properties?</strong></summary>
-      <p>Currently, WaterGuard is designed for residential homes, but we plan to support commercial use soon.</p>
-    </details>
-    <details>
-      <summary><strong>Is my data secure?</strong></summary>
-      <p>Yes, we prioritize your privacy and secure all usage data with encryption.</p>
-    </details>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(f'<section role="region" aria-labelledby="{faq_id}"><h2 id="{faq_id}">❓ الأسئلة الشائعة</h2></section>', unsafe_allow_html=True)
-    st.markdown("""
-    <details>
-      <summary><strong>كيف يكتشف ووتر جارد التسريبات؟</strong></summary>
-      <p>يستخدم ووتر جارد الذكاء الاصطناعي لتحليل أنماط استهلاك المياه واكتشاف أي خلل يشير إلى تسرب.</p>
-    </details>
-    <details>
-      <summary><strong>هل يمكن استخدام ووتر جارد للمباني التجارية؟</strong></summary>
-      <p>حالياً، يتم تصميم ووتر جارد للمنازل السكنية فقط، لكننا نخطط لدعم الاستخدام التجاري قريبًا.</p>
-    </details>
-    <details>
-      <summary><strong>هل بياناتي آمنة؟</strong></summary>
-      <p>نعم، نحن نولي خصوصيتك اهتمامًا كبيرًا ونؤمن جميع بيانات الاستخدام بالتشفير.</p>
-    </details>
+    <div style="
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2rem;
+        border-radius: 15px;
+        max-width: 900px;
+        margin: 3rem auto 2rem auto;
+        color: #111;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    ">
+        <h2 style="color: #023e8a; font-weight: 700;">💧 WaterGuard FAQ</h2>
+    </div>
     """, unsafe_allow_html=True)
 
-# --------- Testimonials Section --------- #
-testimonials_id = "testimonials_section"
-if lang == 'en':
-    st.markdown(f'<section role="region" aria-labelledby="{testimonials_id}"><h2 id="{testimonials_id}">💬 Testimonials</h2></section>', unsafe_allow_html=True)
-    st.markdown("""
-    <blockquote>"WaterGuard helped me catch a hidden leak that saved me hundreds of dinars!" - Fatima A.</blockquote>
-    <blockquote>"The real-time alerts are super helpful to monitor our daily usage." - Ali M.</blockquote>
-    <blockquote>"I love how easy it is to understand my water consumption trends." - Sara K.</blockquote>
-    """, unsafe_allow_html=True)
+    faqs_en = {
+        "How can I detect a water leak early?":
+            "Use WaterGuard's anomaly detection alerts to spot unusual spikes.",
+        "What should I do if an anomaly is detected?":
+            "Check for leaks or unusual water usage immediately.",
+        "Can WaterGuard monitor multiple locations?":
+            "Yes, it supports tracking usage across various branches or sites.",
+        "How accurate is the anomaly detection?":
+            "The system uses AI to detect 95% of irregular water usage patterns.",
+        "Is WaterGuard suitable for factories with large consumption?":
+            "Yes, it manages high-volume water use and alerts for excess.",
+        "How often is water usage data updated?":
+            "Data is updated hourly for precise monitoring and alerts.",
+        "Can I download daily usage reports?":
+            "Yes, downloadable CSV reports are available for any selected day.",
+        "What cost savings can I expect?":
+            "Early leak detection and usage optimization significantly reduce bills.",
+        "Does WaterGuard support multiple languages?":
+            "Currently supports English and Arabic interfaces.",
+        "Who do I contact for technical support?":
+            "Contact support@waterguard.bh for all maintenance and help queries."
+    }
+
+    for q, a in faqs_en.items():
+        st.markdown(f"""
+        <div style="
+            background: rgba(255, 255, 255, 0.85);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.2rem;
+            color: #111;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        ">
+            <strong style="color: #0077b6;">{q}</strong>
+            <p style="margin-top: 0.5rem;">{a}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
 else:
-    st.markdown(f'<section role="region" aria-labelledby="{testimonials_id}"><h2 id="{testimonials_id}">💬 آراء المستخدمين</h2></section>', unsafe_allow_html=True)
     st.markdown("""
-    <blockquote>"ساعدني ووتر جارد على اكتشاف تسريب خفي وفر لي مئات الدنانير!" - فاطمة أ.</blockquote>
-    <blockquote>"التنبيهات الفورية مفيدة جدًا لمراقبة استهلاكنا اليومي." - علي م.</blockquote>
-    <blockquote>"أحب سهولة فهم اتجاهات استهلاكي للمياه." - سارة ك.</blockquote>
+    <div style="
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2rem;
+        border-radius: 15px;
+        max-width: 900px;
+        margin: 3rem auto 2rem auto;
+        color: #111;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        direction: rtl;
+        text-align: right;
+    ">
+        <h2 style="color: #023e8a; font-weight: 700;">💧 الأسئلة المتكررة - ووتر جارد</h2>
+    </div>
     """, unsafe_allow_html=True)
 
-# Close main landmark
-st.markdown('</main>', unsafe_allow_html=True)
+    faqs_ar = {
+        "كيف يمكنني اكتشاف تسريب المياه مبكرًا؟":
+            "استخدم تنبيهات كشف الخلل من ووتر جارد لرصد الزيادات غير المعتادة.",
+        "ماذا أفعل إذا تم اكتشاف خلل؟":
+            "تحقق فورًا من وجود تسريبات أو استهلاك غير طبيعي للمياه.",
+        "هل يمكن لووتر جارد مراقبة مواقع متعددة؟":
+            "نعم، يدعم تتبع الاستهلاك عبر فروع أو مواقع مختلفة.",
+        "ما مدى دقة كشف الخلل؟":
+            "يستخدم النظام الذكاء الاصطناعي لاكتشاف 95٪ من أنماط الاستهلاك غير الطبيعية.",
+        "هل ووتر جارد مناسب للمصانع ذات الاستهلاك الكبير؟":
+            "نعم، يدير استهلاك المياه العالي ويرسل تنبيهات عند الزيادة.",
+        "كم مرة يتم تحديث بيانات استهلاك المياه؟":
+            "يتم تحديث البيانات كل ساعة لمراقبة دقيقة وتنبيهات فورية.",
+        "هل يمكنني تحميل تقارير الاستهلاك اليومية؟":
+            "نعم، تتوفر تقارير CSV قابلة للتحميل لأي يوم محدد.",
+        "ما مقدار التوفير المتوقع في التكاليف؟":
+            "الكشف المبكر عن التسريبات وتحسين الاستخدام يقلل الفواتير بشكل كبير.",
+        "هل يدعم ووتر جارد لغات متعددة؟":
+            "يدعم حاليًا واجهات باللغتين الإنجليزية والعربية.",
+        "من أتصل به للدعم الفني؟":
+            "تواصل مع support@waterguard.bh لجميع استفسارات الصيانة والمساعدة."
+    }
+
+    for q, a in faqs_ar.items():
+        st.markdown(f"""
+        <div style="
+            background: rgba(255, 255, 255, 0.85);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.2rem;
+            color: #111;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            direction: rtl;
+            text-align: right;
+        ">
+            <strong style="color: #0077b6;">{q}</strong>
+            <p style="margin-top: 0.5rem;">{a}</p>
+        </div>
+        """, unsafe_allow_html=True)
+       # --------- USER TESTIMONIALS SECTION WITH NAME, EMAIL, EMOJI --------- #
+from random import choice
+
+testimonial_data = [
+    ("💡 WaterGuard helped me discover a hidden leak — saved me BHD 12 this month!"),
+    ("✅ The alerts are super accurate. I got notified before a serious leak became worse."),
+    ("📈 I love the usage graphs. Makes me aware of our daily water behavior."),
+    ("💧 We found our garden sprinkler system was overwatering — now fixed!"),
+    ("🏡 Great for homes with large families — helps avoid high bills."),
+    ("📊 Downloaded a report and shared it with my landlord. Very professional!"),
+    ("📱 The dashboard is clean and easy to use. Even my kids get it!"),
+    ("🔔 Real-time alerts helped me stop water waste while traveling."),
+    ("🧠 I never knew how much the kitchen used until WaterGuard showed me."),
+    ("🌱 We’re now more eco-conscious thanks to WaterGuard’s tips and insights.")
+]
+
+profiles = [
+    ("👨‍💼", "Khalid", "khalid_madan76@outlook.com"),
+    ("👨‍💼", "Yousef", "yousef_albahbhani76@gmail.com"),
+    ("👨‍💼", "Omar", "omar_abdullah36555@yahoo.com"),
+    ("👨‍💼", "Adel", "adel_doseri55@yahoo.com"),
+    ("👨‍💼", "Hassan", "hassan_al_anazi82@gmail.com"),
+    ("👩‍💼", "Noor", "noor_01_altwash98@yahoo.com"),
+    ("👩‍💼", "Mariam", "mariam_11_alekrawi@yahoo.com"),
+    ("👩‍💼", "Rana", "rana_al_shammri93@outlook.com"),
+    ("👩‍💼", "Zahra", "zahra_almtari31@outlook.com"),
+    ("👩‍💼", "Aisha", "aisha_buqais2306@gmail.com"),
+]
+
+if lang == "en":
+    st.markdown("""
+    <div role="region" aria-label="User Testimonials" style="
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2rem;
+        border-radius: 15px;
+        max-width: 900px;
+        margin: 3rem auto 2rem auto;
+        color: #111;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <h2 style="color: #023e8a; font-weight: 700;">💬 User Testimonials</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+    for i in range(len(testimonial_data)):
+        emoji, name, email = profiles[i]
+        testimonial = testimonial_data[i]
+        st.markdown(f"""
+        <div style="background: rgba(255, 255, 255, 0.85);
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    margin-bottom: 1.2rem;
+                    color: #111;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <strong>{emoji} {name} — <span style="color: #666;">{email}</span></strong>
+            <p style="margin-top: 0.5rem;">{testimonial}</p>
+        </div>
+        """, unsafe_allow_html=True)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
 
