@@ -17,6 +17,50 @@ st.set_page_config(page_title="WaterGuard", layout="wide")
 # ---------- LANGUAGE TOGGLE ---------- #
 language = st.sidebar.radio("🌐 Language / اللغة", ["English", "العربية"])
 lang = "ar" if language == "العربية" else "en"
+# --------- SCREEN READER BUTTON (Top Left) --------- #
+def screen_reader_button_top():
+    button_html = f"""
+    <div style="position: absolute; top: 1rem; left: 1rem; z-index: 1000;">
+        <button onclick="readPage()" style="
+            background-color:#023e8a; 
+            color:white; 
+            border:none; 
+            padding:8px 16px; 
+            border-radius:8px; 
+            cursor:pointer;
+            font-size:0.9rem;">
+            🔊 {'Activate Screen Reader' if lang == 'en' else 'تشغيل قارئ الشاشة'}
+        </button>
+    </div>
+    <script>
+    function readPage() {{
+        const synth = window.speechSynthesis;
+        if (synth.speaking) {{
+            synth.cancel();
+        }}
+        const app = document.querySelector('.stApp');
+        let text = '';
+        if (app) {{
+            const walker = document.createTreeWalker(app, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while(node = walker.nextNode()) {{
+                if(node.textContent.trim() !== '') {{
+                    text += node.textContent.trim() + '. ';
+                }}
+            }}
+        }} else {{
+            text = "Content not found.";
+        }}
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';  // Always reads in English
+        synth.speak(utterance);
+    }}
+    </script>
+    """
+    html(button_html, height=0)
+
+screen_reader_button_top()  # <- This actually renders the button
 
 # ---------- BACKGROUND IMAGE ---------- #
 def set_background(image_path):
