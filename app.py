@@ -64,19 +64,19 @@ if lang == "en":
         <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem; border-radius: 15px; max-width: 900px; margin: 3rem auto; color: #111; box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
             <h1 style="color: #023e8a; font-weight: 700;">💧 WaterGuard Prototype</h1>
             <p style="font-size: 1.1rem; line-height: 1.5;">
-                This prototype simulates a smart water metering system for households, businesses, and factories in Muharaq using AI to track anomalies and save costs.
+                WaterGuard is a smart AI-powered water monitoring prototype built for a residential home in Saar. It tracks daily water usage, detects abnormal spikes, and provides real-time alerts to help homeowners save water and reduce costs.
             </p>
-            <h3 style="color: #023e8a; font-weight: 700;">Targeted Features:</h3>
+            <h3 style="color: #023e8a; font-weight: 700;">Key Features:</h3>
             <ul style="font-size: 1rem; line-height: 1.6;">
-                <li><strong>For Homes:</strong> Detect water leaks early to reduce waste and lower monthly utility bills significantly.</li>
-                <li><strong>For Businesses:</strong> Track usage across multiple branches to ensure water efficiency and cost control.</li>
-                <li><strong>For Factories:</strong> Manage high-volume water consumption with automated alerts for excessive or irregular usage.</li>
+                <li><strong>Leak Detection:</strong> Automatically identifies unusual usage that may indicate a leak.</li>
+                <li><strong>Real-Time Alerts:</strong> Warns users when consumption exceeds normal levels.</li>
+                <li><strong>Usage Reports:</strong> Visualizes daily and monthly usage to support smart water habits.</li>
             </ul>
             <h3 style="color: #023e8a; font-weight: 700;">Why WaterGuard?</h3>
             <ul style="font-size: 1rem; line-height: 1.6;">
-                <li><strong>Homes:</strong> Save water and money with ease.</li>
-                <li><strong>Businesses:</strong> Optimize usage, reduce costs efficiently.</li>
-                <li><strong>Factories:</strong> Prevent waste, control industrial water consumption.</li>
+                <li><strong>Smart Monitoring:</strong> Gain full insight into your household's water behavior.</li>
+                <li><strong>Cost Savings:</strong> Reduce your monthly water bill through early detection and optimization.</li>
+                <li><strong>Eco-Friendly:</strong> Support sustainability by preventing waste.</li>
             </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -85,19 +85,19 @@ else:
         <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem; border-radius: 15px; max-width: 900px; margin: 3rem auto; color: #111; box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl; text-align: right;">
             <h1 style="color: #023e8a; font-weight: 700;">💧 نموذج ووتر جارد</h1>
             <p style="font-size: 1.1rem; line-height: 1.5;">
-                يحاكي هذا النموذج الذكي نظام قياس المياه للمنازل والشركات والمصانع في المحرق باستخدام الذكاء الاصطناعي للكشف عن التسريبات وتوفير التكاليف.
+                ووتر جارد هو نموذج ذكي لمراقبة استهلاك المياه في منزل سكني بمنطقة سار. يستخدم الذكاء الاصطناعي لتحليل البيانات وكشف أي استهلاك غير طبيعي، مما يساعد على تقليل الهدر وخفض الفواتير.
             </p>
-            <h3 style="color: #023e8a; font-weight: 700;">المزايا المستهدفة:</h3>
+            <h3 style="color: #023e8a; font-weight: 700;">الميزات الرئيسية:</h3>
             <ul style="font-size: 1rem; line-height: 1.6;">
-                <li><strong>للمنازل:</strong> اكتشاف التسريبات مبكرًا لتقليل الفاقد وخفض فواتير المياه الشهرية بشكل ملحوظ.</li>
-                <li><strong>للشركات:</strong> تتبع الاستهلاك في الفروع المختلفة لضمان كفاءة المياه والتحكم في التكاليف.</li>
-                <li><strong>للمصانع:</strong> إدارة استهلاك المياه بكميات كبيرة باستخدام تنبيهات تلقائية للاستخدام الزائد أو غير المنتظم.</li>
+                <li><strong>كشف التسريبات:</strong> يحدد تلقائيًا أي زيادات غير طبيعية قد تشير إلى وجود تسريب.</li>
+                <li><strong>تنبيهات فورية:</strong> يحذرك عندما يتجاوز الاستهلاك المستويات الطبيعية.</li>
+                <li><strong>تقارير استهلاك:</strong> يعرض الاستخدام اليومي والشهري بطريقة مرئية وسهلة الفهم.</li>
             </ul>
             <h3 style="color: #023e8a; font-weight: 700;">لماذا ووتر جارد؟</h3>
             <ul style="font-size: 1rem; line-height: 1.6;">
-                <li><strong>للمنازل:</strong> وفر المياه والمال بسهولة وفعالية.</li>
-                <li><strong>للشركات:</strong> حسّن الاستهلاك وقلل التكاليف بذكاء.</li>
-                <li><strong>للمصانع:</strong> منع الهدر والتحكم بالاستهلاك الصناعي.</li>
+                <li><strong>مراقبة ذكية:</strong> احصل على رؤية شاملة لسلوك استهلاك المياه في منزلك.</li>
+                <li><strong>توفير في التكاليف:</strong> خفّض فواتيرك من خلال الكشف المبكر والتحسين المستمر.</li>
+                <li><strong>صديق للبيئة:</strong> ساهم في الاستدامة من خلال تقليل الهدر.</li>
             </ul>
         </div>
     """, unsafe_allow_html=True)
