@@ -7,35 +7,20 @@ Original file is located at
     https://colab.research.google.com/drive/113L1QzGyfkDEx2eGmbAKDf6FVRvgPTz6
 """
 
-
+# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import IsolationForest
 import matplotlib.pyplot as plt
 import seaborn as sns
+import base64
 import random
-import datetime
-import streamlit as st
-import base64
-import pandas as pd
-import numpy as np
-
-import streamlit as st
-import base64
-import seaborn as sns
-
-import streamlit as st
-import base64
-import seaborn as sns
-
-import streamlit as st
-import base64
-import seaborn as sns
 
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
+# ---------- Set Background Image ----------
 def set_background(image_path):
     with open(image_path, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode()
@@ -43,7 +28,6 @@ def set_background(image_path):
     st.markdown(
         f"""
         <style>
-        /* Background image with center and cover */
         .stApp {{
             background-image: url("data:image/jpg;base64,{encoded}");
             background-size: cover;
@@ -55,7 +39,6 @@ def set_background(image_path):
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
         }}
-        /* Dark transparent overlay for readability */
         .stApp::before {{
             content: "";
             position: fixed;
@@ -66,17 +49,6 @@ def set_background(image_path):
             background: rgba(0, 0, 0, 0.45);
             z-index: -1;
         }}
-        /* Main content container */
-        .main {{
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-            padding: 2rem 3rem;
-            margin: 3rem auto;
-            max-width: 900px;
-            color: #111;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }}
-        /* Sidebar styling */
         [data-testid="stSidebar"] {{
             background: rgba(255, 255, 255, 0.95);
             border-radius: 0 15px 15px 0;
@@ -88,10 +60,9 @@ def set_background(image_path):
         unsafe_allow_html=True,
     )
 
-# Set the background image
 set_background("water_bg.jpg")
 
-# Main content - single heading and features list, no welcome message
+# ---------- Header Content ----------
 st.markdown(
     """
     <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem; border-radius: 15px; max-width: 900px; margin: 3rem auto; color: #111; box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
@@ -110,75 +81,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-
-# Simulate water usage data
-def simulate_data():
-    np.random.seed(42)
-    hours = 365 * 24
-    date_range = pd.date_range(start='2024-01-01', periods=hours, freq='H')
-    
-    usage_main = np.random.normal(12, 3, hours).clip(0, 50)
-    usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
-    usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
-    usage_bathroom = np.random.normal(4, 1.5, hours).clip(0, 15)
-
-    df = pd.DataFrame({
-        'timestamp': date_range,
-        'usage_main_liters': usage_main,
-        'usage_garden_liters': usage_garden,
-        'usage_kitchen_liters': usage_kitchen,
-        'usage_bathroom_liters': usage_bathroom,
-    })
-
-    df['usage_liters'] = df[
-        ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
-    ].sum(axis=1)
-
-    df['date'] = df['timestamp'].dt.date
-
-    # Randomly boost usage for ~30% of days to go over quota
-    unique_days = df['date'].unique()
-    high_usage_days = np.random.choice(unique_days, size=int(len(unique_days) * 0.3), replace=False)
-    for day in high_usage_days:
-        df.loc[df['date'] == day, ['usage_main_liters', 'usage_garden_liters',
-                                   'usage_kitchen_liters', 'usage_bathroom_liters']] *= np.random.uniform(1.5, 2)
-
-        df['usage_liters'] = df[
-            ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
-        ].sum(axis=1)
-
-    return df
-
-# Load data
-df = simulate_data()
-df["timestamp"] = pd.to_datetime(df["timestamp"])
-
-# Sidebar: select a day
-selected_day = st.sidebar.selectbox("📅 Select a Day to View Usage", sorted(df["date"].unique(), reverse=True))
-df_selected_day = df[df["date"] == selected_day]
-day_used = df_selected_day["usage_liters"].sum()
-daily_quota = 1500
-remaining = max(daily_quota - day_used, 0)
-emoji = "😊" if day_used <= daily_quota else "😞"
-progress = min(day_used / daily_quota, 1.0)
-
-# Show summary for selected day
-st.sidebar.markdown("## 💧 Daily Water Usage Summary")
-st.sidebar.markdown(f"""
-**Date:** {selected_day}  
-**Used:** {day_used:,.0f} liters  
-**Remaining:** {remaining:,.0f} liters  
-**Quota:** {daily_quota:,} liters  
-**Status:** {emoji}
-""")
-st.sidebar.progress(progress)
-
-
-
-
-
-# Simulated data
+# ---------- Simulate Water Usage Data ----------
 def simulate_data():
     np.random.seed(42)
     hours = 365 * 24
@@ -200,61 +103,72 @@ def simulate_data():
     df['location'] = 'Muharaq'
     df['sensor_status'] = np.random.choice(['OK', 'MAINTENANCE', 'ERROR'], size=hours, p=[0.95, 0.04, 0.01])
 
-    # Inject synthetic anomaly spikes (5%)
-    num_anomalies = int(0.05 * len(df))
-    indices = random.sample(range(len(df)), num_anomalies)
-    for i in indices:
-        df.loc[i, ['usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters']] *= np.random.uniform(2, 5)
+    # Inject synthetic anomaly spikes
+    anomaly_indices = random.sample(range(len(df)), int(0.05 * len(df)))
+    df.loc[anomaly_indices, ['usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters']] *= np.random.uniform(2, 5)
 
+    df['usage_liters'] = df[
+        ['usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters']
+    ].sum(axis=1)
+
+    df['date'] = df['timestamp'].dt.date
     return df
 
-# Load data
+# ---------- Load and Prepare Data ----------
 df = simulate_data()
-df["timestamp"] = pd.to_datetime(df["timestamp"])
-df["usage_liters"] = df[
-    ["usage_main_liters", "usage_garden_liters", "usage_kitchen_liters", "usage_bathroom_liters"]
-].sum(axis=1)
 
-# Anomaly detection
+# ---------- Daily Water Summary ----------
+selected_day = st.sidebar.selectbox("📅 Select a Day to View Usage", sorted(df["date"].unique(), reverse=True))
+df_selected_day = df[df["date"] == selected_day]
+day_used = df_selected_day["usage_liters"].sum()
+daily_quota = 1500
+total_cost = day_used * 0.0015
+
+remaining = max(daily_quota - day_used, 0)
+emoji = "😊" if day_used <= daily_quota else "😞"
+progress = min(day_used / daily_quota, 1.0)
+
+st.sidebar.markdown("## 💧 Daily Summary")
+st.sidebar.markdown(f"""
+**Date:** {selected_day}  
+**Used:** {day_used:,.0f} liters  
+**Remaining:** {remaining:,.0f} liters  
+**Cost Estimate:** ${total_cost:.2f}  
+**Quota:** {daily_quota:,} liters  
+**Status:** {emoji}
+""")
+st.sidebar.progress(progress)
+
+# ---------- Anomaly Detection ----------
 model = IsolationForest(contamination=0.05, random_state=42)
 df["anomaly"] = model.fit_predict(df[["usage_liters"]])
 df["anomaly"] = df["anomaly"].map({1: "Normal", -1: "Anomaly"})
+df["severity"] = pd.cut(df["usage_liters"], bins=[0, 25, 50, 500], labels=["Low", "Medium", "High"])
 
-st.write(f"💥 **Detected anomalies (possible leaks/spikes): {df['anomaly'].value_counts().get('Anomaly', 0)}**")
+st.write(f"🚨 **Detected anomalies (possible leaks/spikes): {df['anomaly'].value_counts().get('Anomaly', 0)}**")
 
-# Anomaly table
+# ---------- Anomaly Table and Export ----------
 with st.expander("📋 Show Detected Anomalies"):
-    st.dataframe(df[df["anomaly"] == "Anomaly"][["timestamp", "usage_liters"]])
+    st.dataframe(df[df["anomaly"] == "Anomaly"][["timestamp", "usage_liters", "severity"]])
+    st.download_button("Download Anomalies", df[df["anomaly"] == "Anomaly"].to_csv(), file_name="anomalies.csv")
 
-# Hourly view
-df["date"] = df["timestamp"].dt.date
+# ---------- Charts ----------
 df["time_str"] = df["timestamp"].dt.strftime('%H:%M')
-
-selected_day = st.selectbox("📅 Select a date to view hourly usage", sorted(df["date"].unique()))
 df_hourly = df[df["date"] == selected_day]
 
 fig1, ax1 = plt.subplots(figsize=(14, 6))
 sns.lineplot(data=df_hourly, x="time_str", y="usage_liters", ax=ax1, label="Usage")
-sns.scatterplot(
-    data=df_hourly[df_hourly["anomaly"] == "Anomaly"],
-    x="time_str",
-    y="usage_liters",
-    color="red",
-    marker="X",
-    s=60,
-    label="Anomaly",
-    ax=ax1
-)
-ax1.set_title(f"Hourly Water Usage for {selected_day}")
-ax1.set_xlabel("Time (HH:MM)")
-ax1.set_ylabel("Liters per Hour")
+sns.scatterplot(data=df_hourly[df_hourly["anomaly"] == "Anomaly"], x="time_str", y="usage_liters", color="red", marker="X", s=60, label="Anomaly", ax=ax1)
+ax1.set_title(f"Hourly Usage for {selected_day}")
+ax1.set_xlabel("Time")
+ax1.set_ylabel("Liters")
 ax1.tick_params(axis="x", rotation=45)
 ax1.legend()
 st.pyplot(fig1)
 
-# Daily usage
-df_daily = df.set_index("timestamp").resample("D")["usage_liters"].sum().reset_index()
+# Daily View
 fig2, ax2 = plt.subplots(figsize=(14, 5))
+df_daily = df.set_index("timestamp").resample("D")["usage_liters"].sum().reset_index()
 sns.lineplot(data=df_daily, x="timestamp", y="usage_liters", ax=ax2)
 ax2.set_title("Daily Water Usage")
 ax2.set_xlabel("Date")
@@ -262,12 +176,43 @@ ax2.set_ylabel("Liters")
 ax2.tick_params(axis="x", rotation=45)
 st.pyplot(fig2)
 
-# Monthly usage
-df_monthly = df.set_index("timestamp").resample("M")["usage_liters"].sum().reset_index()
+# Monthly View
 fig3, ax3 = plt.subplots(figsize=(14, 5))
+df_monthly = df.set_index("timestamp").resample("M")["usage_liters"].sum().reset_index()
 sns.lineplot(data=df_monthly, x="timestamp", y="usage_liters", ax=ax3)
 ax3.set_title("Monthly Water Usage")
 ax3.set_xlabel("Month")
 ax3.set_ylabel("Liters")
 ax3.tick_params(axis="x", rotation=45)
 st.pyplot(fig3)
+
+# ---------- Business Pitch Tabs ----------
+st.markdown("## 💼 Why WaterGuard?")
+pitch_tabs = st.tabs(["🏠 Homes", "🏢 Businesses", "🏭 Factories"])
+
+with pitch_tabs[0]:
+    st.markdown("""
+    ### 🏠 For Homes
+    - 💧 Leak Detection
+    - 📈 Personal Usage Insights
+    - 📱 Mobile Friendly
+    - 💸 Save on bills
+    """)
+
+with pitch_tabs[1]:
+    st.markdown("""
+    ### 🏢 For Businesses
+    - 💰 Reduce Operating Costs
+    - 📊 Usage Reports
+    - 🧾 Accurate Billing
+    - 🧠 Smart Office Integration
+    """)
+
+with pitch_tabs[2]:
+    st.markdown("""
+    ### 🏭 For Factories
+    - 📉 Prevent Overuse
+    - 🚨 Real-time Alerts
+    - 🧪 Zone Monitoring
+    - 📁 Compliance Reporting
+    """)
