@@ -321,6 +321,7 @@ else:
 
 # --------- FAQ Section (Translucent white block + expanders) --------- #
 
+# ---------- FAQ SECTION AT END ---------- #
 if lang == "en":
     st.markdown("""
     <div style="
@@ -328,42 +329,52 @@ if lang == "en":
         padding: 2rem;
         border-radius: 15px;
         max-width: 900px;
-        margin: 3rem auto 5rem auto;
+        margin: 3rem auto 2rem auto;
         color: #111;
         box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     ">
-        <h1 style="color: #023e8a; font-weight: 700;">💧 WaterGuard Prototype FAQ</h1>
+        <h2 style="color: #023e8a; font-weight: 700;">💧 WaterGuard FAQ</h2>
     </div>
     """, unsafe_allow_html=True)
 
-    with st.container():
-        faqs_en = {
-            "How can I detect a water leak early?":
-                "Use WaterGuard's anomaly detection alerts to spot unusual spikes.",
-            "What should I do if an anomaly is detected?":
-                "Check for leaks or unusual water usage immediately.",
-            "Can WaterGuard monitor multiple locations?":
-                "Yes, it supports tracking usage across various branches or sites.",
-            "How accurate is the anomaly detection?":
-                "The system uses AI to detect 95% of irregular water usage patterns.",
-            "Is WaterGuard suitable for factories with large consumption?":
-                "Yes, it manages high-volume water use and alerts for excess.",
-            "How often is water usage data updated?":
-                "Data is updated hourly for precise monitoring and alerts.",
-            "Can I download daily usage reports?":
-                "Yes, downloadable CSV reports are available for any selected day.",
-            "What cost savings can I expect?":
-                "Early leak detection and usage optimization significantly reduce bills.",
-            "Does WaterGuard support multiple languages?":
-                "Currently supports English and Arabic interfaces.",
-            "Who do I contact for technical support?":
-                "Contact support@waterguard.bh for all maintenance and help queries."
-        }
+    faqs_en = {
+        "How can I detect a water leak early?":
+            "Use WaterGuard's anomaly detection alerts to spot unusual spikes.",
+        "What should I do if an anomaly is detected?":
+            "Check for leaks or unusual water usage immediately.",
+        "Can WaterGuard monitor multiple locations?":
+            "Yes, it supports tracking usage across various branches or sites.",
+        "How accurate is the anomaly detection?":
+            "The system uses AI to detect 95% of irregular water usage patterns.",
+        "Is WaterGuard suitable for factories with large consumption?":
+            "Yes, it manages high-volume water use and alerts for excess.",
+        "How often is water usage data updated?":
+            "Data is updated hourly for precise monitoring and alerts.",
+        "Can I download daily usage reports?":
+            "Yes, downloadable CSV reports are available for any selected day.",
+        "What cost savings can I expect?":
+            "Early leak detection and usage optimization significantly reduce bills.",
+        "Does WaterGuard support multiple languages?":
+            "Currently supports English and Arabic interfaces.",
+        "Who do I contact for technical support?":
+            "Contact support@waterguard.bh for all maintenance and help queries."
+    }
 
-        for question, answer in faqs_en.items():
-            with st.expander(question):
-                st.write(answer)
+    for q, a in faqs_en.items():
+        st.markdown(f"""
+        <div style="
+            background: rgba(255, 255, 255, 0.85);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.2rem;
+            color: #111;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        ">
+            <strong style="color: #0077b6;">{q}</strong>
+            <p style="margin-top: 0.5rem;">{a}</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 else:
     st.markdown("""
@@ -372,41 +383,53 @@ else:
         padding: 2rem;
         border-radius: 15px;
         max-width: 900px;
-        margin: 3rem auto 5rem auto;
+        margin: 3rem auto 2rem auto;
         color: #111;
         box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         direction: rtl;
         text-align: right;
     ">
-        <h1 style="color: #023e8a; font-weight: 700;">💧 نموذج ووتر جارد للأسئلة المتكررة</h1>
+        <h2 style="color: #023e8a; font-weight: 700;">💧 الأسئلة المتكررة - ووتر جارد</h2>
     </div>
     """, unsafe_allow_html=True)
 
-    with st.container():
-        faqs_ar = {
-            "كيف يمكنني اكتشاف تسريب المياه مبكرًا؟":
-                "استخدم تنبيهات كشف الخلل من ووتر جارد لرصد الزيادات غير المعتادة.",
-            "ماذا أفعل إذا تم اكتشاف خلل؟":
-                "تحقق فورًا من وجود تسريبات أو استهلاك غير طبيعي للمياه.",
-            "هل يمكن لووتر جارد مراقبة مواقع متعددة؟":
-                "نعم، يدعم تتبع الاستهلاك عبر فروع أو مواقع مختلفة.",
-            "ما مدى دقة كشف الخلل؟":
-                "يستخدم النظام الذكاء الاصطناعي لاكتشاف 95% من أنماط الاستهلاك غير الطبيعية.",
-            "هل ووتر جارد مناسب للمصانع ذات الاستهلاك الكبير؟":
-                "نعم، يدير استهلاك المياه العالي ويرسل تنبيهات عند الزيادة.",
-            "كم مرة يتم تحديث بيانات استهلاك المياه؟":
-                "يتم تحديث البيانات كل ساعة لمراقبة دقيقة وتنبيهات فورية.",
-            "هل يمكنني تحميل تقارير الاستهلاك اليومية؟":
-                "نعم، تتوفر تقارير CSV قابلة للتحميل لأي يوم محدد.",
-            "ما مقدار التوفير المتوقع في التكاليف؟":
-                "الكشف المبكر عن التسريبات وتحسين الاستخدام يقلل الفواتير بشكل كبير.",
-            "هل يدعم ووتر جارد لغات متعددة؟":
-                "يدعم حاليًا واجهات باللغتين الإنجليزية والعربية.",
-            "من أتصل به للدعم الفني؟":
-                "تواصل مع support@waterguard.bh لجميع استفسارات الصيانة والمساعدة."
-        }
+    faqs_ar = {
+        "كيف يمكنني اكتشاف تسريب المياه مبكرًا؟":
+            "استخدم تنبيهات كشف الخلل من ووتر جارد لرصد الزيادات غير المعتادة.",
+        "ماذا أفعل إذا تم اكتشاف خلل؟":
+            "تحقق فورًا من وجود تسريبات أو استهلاك غير طبيعي للمياه.",
+        "هل يمكن لووتر جارد مراقبة مواقع متعددة؟":
+            "نعم، يدعم تتبع الاستهلاك عبر فروع أو مواقع مختلفة.",
+        "ما مدى دقة كشف الخلل؟":
+            "يستخدم النظام الذكاء الاصطناعي لاكتشاف 95٪ من أنماط الاستهلاك غير الطبيعية.",
+        "هل ووتر جارد مناسب للمصانع ذات الاستهلاك الكبير؟":
+            "نعم، يدير استهلاك المياه العالي ويرسل تنبيهات عند الزيادة.",
+        "كم مرة يتم تحديث بيانات استهلاك المياه؟":
+            "يتم تحديث البيانات كل ساعة لمراقبة دقيقة وتنبيهات فورية.",
+        "هل يمكنني تحميل تقارير الاستهلاك اليومية؟":
+            "نعم، تتوفر تقارير CSV قابلة للتحميل لأي يوم محدد.",
+        "ما مقدار التوفير المتوقع في التكاليف؟":
+            "الكشف المبكر عن التسريبات وتحسين الاستخدام يقلل الفواتير بشكل كبير.",
+        "هل يدعم ووتر جارد لغات متعددة؟":
+            "يدعم حاليًا واجهات باللغتين الإنجليزية والعربية.",
+        "من أتصل به للدعم الفني؟":
+            "تواصل مع support@waterguard.bh لجميع استفسارات الصيانة والمساعدة."
+    }
 
-        for question, answer in faqs_ar.items():
-            with st.expander(question):
-                st.write(answer)
+    for q, a in faqs_ar.items():
+        st.markdown(f"""
+        <div style="
+            background: rgba(255, 255, 255, 0.85);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.2rem;
+            color: #111;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            direction: rtl;
+            text-align: right;
+        ">
+            <strong style="color: #0077b6;">{q}</strong>
+            <p style="margin-top: 0.5rem;">{a}</p>
+        </div>
+        """, unsafe_allow_html=True)
