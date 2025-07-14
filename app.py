@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import random
 import base64
+from streamlit.components.v1 import html
 
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
@@ -101,7 +102,7 @@ else:
             </ul>
         </div>
     """, unsafe_allow_html=True)
-   from streamlit.components.v1 import html
+
 # ... other imports at the top ...
 
 def screen_reader_button(lang):
