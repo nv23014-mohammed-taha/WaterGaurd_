@@ -166,8 +166,8 @@ daily_quota = 1500
 remaining = max(daily_quota - day_usage, 0)
 usage_ratio = day_usage / daily_quota
 
-# Calculate daily cost estimate (mock tariff)
-cost_per_liter = 0.0015
+# Calculate daily cost estimate (Bahraini Dinars)
+cost_per_liter = 0.000193
 daily_cost = day_usage * cost_per_liter
 
 if lang == 'en':
@@ -177,7 +177,7 @@ if lang == 'en':
     **Used:** {day_usage:,.0f} liters  
     **Remaining:** {remaining:,.0f} liters  
     **Quota:** {daily_quota} liters  
-    **Estimated Cost:** ${daily_cost:.2f}  
+    **Estimated Cost:** BHD {daily_cost:.3f}  
     """)
 else:
     st.sidebar.markdown(f"""
@@ -186,7 +186,7 @@ else:
     **المستهلك:** {day_usage:,.0f} لتر  
     **المتبقي:** {remaining:,.0f} لتر  
     **الحصة اليومية:** {daily_quota} لتر  
-    **التكلفة التقديرية:** ${daily_cost:.2f}  
+    **التكلفة التقديرية:** {daily_cost:.3f} دينار بحريني  
     """)
 
 st.sidebar.progress(min(usage_ratio, 1.0))
@@ -291,3 +291,64 @@ st.download_button(
     file_name=f'daily_usage_{selected_day}.csv',
     mime='text/csv'
 )
+
+# --------- Real-Time Notifications & Alerts --------- #
+if "Anomaly" in df_day["anomaly"].values:
+    if lang == 'en':
+        st.warning("🚨 High water consumption anomaly detected today!")
+    else:
+        st.warning("🚨 تم الكشف عن خلل استهلاك المياه اليوم!")
+
+# --------- Water Conservation Tips --------- #
+if lang == 'en':
+    st.markdown("### 💡 Water Conservation Tips")
+    st.markdown("""
+    - Fix leaks promptly to save water and money.
+    - Use water-efficient appliances and fixtures.
+    - Collect rainwater for irrigation.
+    - Turn off taps when not in use.
+    - Monitor your usage regularly to detect changes.
+    """)
+else:
+    st.markdown("### 💡 نصائح للحفاظ على المياه")
+    st.markdown("""
+    - أصلح التسريبات بسرعة لتوفير المياه والمال.
+    - استخدم الأجهزة والتركيبات الموفرة للمياه.
+    - اجمع مياه الأمطار للري.
+    - أغلق الصنابير عند عدم الاستخدام.
+    - راقب استهلاكك للكشف عن التغيرات.
+    """)
+
+# --------- User Feedback & Support Section --------- #
+st.markdown("---")
+if lang == 'en':
+    st.markdown("### 📝 User Feedback & Support")
+    feedback = st.text_area("Please share your feedback or request help:")
+    if st.button("Submit Feedback"):
+        if feedback.strip() != "":
+            st.success("Thank you for your feedback! We will review it shortly.")
+        else:
+            st.error("Feedback cannot be empty.")
+    st.markdown("""
+    **FAQ:**  
+    - How do I know if I have a leak?  
+    - What should I do if I detect an anomaly?  
+    - Who do I contact for maintenance?  
+    """)
+    st.markdown("Contact us at: support@waterguard.bh")
+else:
+    st.markdown("### 📝 ملاحظات المستخدم والدعم")
+    feedback = st.text_area("يرجى مشاركة ملاحظاتك أو طلب المساعدة:")
+    if st.button("إرسال الملاحظات"):
+        if feedback.strip() != "":
+            st.success("شكرًا لملاحظاتك! سنراجعها قريبًا.")
+        else:
+            st.error("لا يمكن أن تكون الملاحظات فارغة.")
+    st.markdown("""
+    **الأسئلة المتكررة:**  
+    - كيف أعرف إذا كان لدي تسريب؟  
+    - ماذا أفعل إذا اكتشفت خللًا؟  
+    - من أتصل به للصيانة؟  
+    """)
+    st.markdown("تواصل معنا عبر: support@waterguard.bh")
+
