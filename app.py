@@ -101,7 +101,52 @@ else:
             </ul>
         </div>
     """, unsafe_allow_html=True)
+def screen_reader_button(lang):
+    button_html = f"""
+    <button onclick="readPage()" style="
+        background-color:#023e8a; 
+        color:white; 
+        border:none; 
+        padding:10px 20px; 
+        border-radius:10px; 
+        cursor:pointer;
+        font-size:1rem;
+        margin: 1rem 0;">
+        🔊 {'Activate Screen Reader' if lang == 'en' else 'تشغيل قارئ الشاشة'}
+    </button>
+    <script>
+    function readPage() {{
+        const synth = window.speechSynthesis;
+        if (synth.speaking) {{
+            synth.cancel();
+        }}
+        // Grab all visible text inside .stApp container
+        const app = document.querySelector('.stApp');
+        let text = '';
+        if (app) {{
+            // Get all text nodes inside .stApp and concatenate their text content
+            const walker = document.createTreeWalker(app, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while(node = walker.nextNode()) {{
+                if(node.textContent.trim() !== '') {{
+                    text += node.textContent.trim() + '. ';
+                }}
+            }}
+        }} else {{
+            text = "Content not found.";
+        }}
 
+        // Create utterance and set language
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = '{ "en-US" if lang == "en" else "ar-SA" }';
+        synth.speak(utterance);
+    }}
+    </script>
+    """
+    components.html(button_html, height=60)
+
+# Add the screen reader button here, below intro:
+screen_reader_button(lang)
 # ---------- DATA SIMULATION ---------- #
 @st.cache_data
 def simulate_data():
