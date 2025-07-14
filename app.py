@@ -433,10 +433,38 @@ else:
             <p style="margin-top: 0.5rem;">{a}</p>
         </div>
         """, unsafe_allow_html=True)
-        # --------- TESTIMONIALS SECTION --------- #
+       # --------- USER TESTIMONIALS SECTION WITH NAME, EMAIL, EMOJI --------- #
+from random import choice
+
+testimonial_data = [
+    ("💡 WaterGuard helped me discover a hidden leak — saved me BHD 12 this month!"),
+    ("✅ The alerts are super accurate. I got notified before a serious leak became worse."),
+    ("📈 I love the usage graphs. Makes me aware of our daily water behavior."),
+    ("💧 We found our garden sprinkler system was overwatering — now fixed!"),
+    ("🏡 Great for homes with large families — helps avoid high bills."),
+    ("📊 Downloaded a report and shared it with my landlord. Very professional!"),
+    ("📱 The dashboard is clean and easy to use. Even my kids get it!"),
+    ("🔔 Real-time alerts helped me stop water waste while traveling."),
+    ("🧠 I never knew how much the kitchen used until WaterGuard showed me."),
+    ("🌱 We’re now more eco-conscious thanks to WaterGuard’s tips and insights.")
+]
+
+profiles = [
+    ("👨‍💼", "Khalid", "khalid_madan76@outlook.com"),
+    ("👨‍💼", "Yousef", "yousef_albahbhani76@gmail.com"),
+    ("👨‍💼", "Omar", "omar_abdullah36555@yahoo.com"),
+    ("👨‍💼", "Adel", "adel_doseri55@yahoo.com"),
+    ("👨‍💼", "Hassan", "hassan_al_anazi82@gmail.com"),
+    ("👩‍💼", "Noor", "noor_01_altwash98@yahoo.com"),
+    ("👩‍💼", "Mariam", "mariam_11_alekrawi@yahoo.com"),
+    ("👩‍💼", "Rana", "rana_al_shammri93@outlook.com"),
+    ("👩‍💼", "Zahra", "zahra_almtari31@outlook.com"),
+    ("👩‍💼", "Aisha", "aisha_buqais2306@gmail.com"),
+]
+
 if lang == "en":
     st.markdown("""
-    <div style="
+    <div role="region" aria-label="User Testimonials" style="
         background: rgba(255, 255, 255, 0.9);
         padding: 2rem;
         border-radius: 15px;
@@ -444,83 +472,23 @@ if lang == "en":
         margin: 3rem auto 2rem auto;
         color: #111;
         box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    ">
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         <h2 style="color: #023e8a; font-weight: 700;">💬 User Testimonials</h2>
     </div>
     """, unsafe_allow_html=True)
 
-    testimonials_en = [
-        "💡 WaterGuard helped me discover a hidden leak — saved me BHD 12 this month!",
-        "✅ The alerts are super accurate. I got notified before a serious leak became worse.",
-        "📈 I love the usage graphs. Makes me aware of our daily water behavior.",
-        "💧 We found our garden sprinkler system was overwatering — now fixed!",
-        "🏡 Great for homes with large families — helps avoid high bills.",
-        "📊 Downloaded a report and shared it with my landlord. Very professional!",
-        "📱 The dashboard is clean and easy to use. Even my kids get it!",
-        "🔔 Real-time alerts helped me stop water waste while traveling.",
-        "🧠 I never knew how much the kitchen used until WaterGuard showed me.",
-        "🌱 We’re now more eco-conscious thanks to WaterGuard’s tips and insights."
-    ]
-
-    for t in testimonials_en:
+    for i in range(len(testimonial_data)):
+        emoji, name, email = profiles[i]
+        testimonial = testimonial_data[i]
         st.markdown(f"""
-        <div style="
-            background: rgba(255, 255, 255, 0.85);
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1.2rem;
-            color: #111;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        ">
-            <p style="margin: 0;">{t}</p>
+        <div style="background: rgba(255, 255, 255, 0.85);
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    margin-bottom: 1.2rem;
+                    color: #111;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <strong>{emoji} {name} — <span style="color: #666;">{email}</span></strong>
+            <p style="margin-top: 0.5rem;">{testimonial}</p>
         </div>
         """, unsafe_allow_html=True)
-
-else:
-    st.markdown("""
-    <div style="
-        background: rgba(255, 255, 255, 0.9);
-        padding: 2rem;
-        border-radius: 15px;
-        max-width: 900px;
-        margin: 3rem auto 2rem auto;
-        color: #111;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        direction: rtl;
-        text-align: right;
-    ">
-        <h2 style="color: #023e8a; font-weight: 700;">💬 آراء المستخدمين</h2>
-    </div>
-    """, unsafe_allow_html=True)
-
-    testimonials_ar = [
-        "💡 ووتر جارد ساعدني في اكتشاف تسريب خفي — وفرت أكثر من 12 دينار هذا الشهر!",
-        "✅ التنبيهات دقيقة جدًا. تم إبلاغي قبل أن يتفاقم التسريب.",
-        "📈 أحببت الرسوم البيانية، ساعدتني في فهم نمط الاستهلاك اليومي.",
-        "💧 اكتشفنا أن نظام الري يستهلك مياه كثيرة، والآن قمنا بتعديله.",
-        "🏡 مثالي للعائلات الكبيرة لتجنب الفواتير العالية.",
-        "📊 حملت التقرير اليومي وأرسلته للمالك. احترافي جدًا!",
-        "📱 الواجهة سهلة الاستخدام وواضحة، حتى أطفالي فهموها!",
-        "🔔 نبهني أثناء السفر بوجود استهلاك غير طبيعي، وتم حل المشكلة.",
-        "🧠 لم أكن أعلم أن المطبخ يستهلك هذا الكم من المياه!",
-        "🌱 أصبحت أكثر وعيًا بالبيئة بفضل نصائح ووتر جارد."
-    ]
-
-    for t in testimonials_ar:
-        st.markdown(f"""
-        <div style="
-            background: rgba(255, 255, 255, 0.85);
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1.2rem;
-            color: #111;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            direction: rtl;
-            text-align: right;
-        ">
-            <p style="margin: 0;">{t}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
