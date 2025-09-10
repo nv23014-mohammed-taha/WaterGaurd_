@@ -669,27 +669,140 @@ if page == "Education":
     # Language selector
     lang = st.selectbox("🌍 Choose Language:", ["English", "العربية", "Français"])
 
-    # Course content
-    if audience == "Adult":
-        if lang == "English":
-            st.subheader("💧 Module 1: Smart Daily Practices")
-            st.write("""
-            - Install water-efficient appliances (taps, toilets, washing machines).  
-            - Water gardens in the early morning or evening to reduce evaporation.  
-            - Collect and reuse rainwater where possible.  
-            - Track your daily usage using smart apps like WaterGuard.  
-            """)
+   import streamlit as st
 
-            st.subheader("♻️ Module 2: Preventing Leaks & Saving Money")
-            st.write("""
-            - Regularly inspect your pipes for small leaks.  
-            - Schedule professional inspections to prevent costly damage.  
-            - Fixing one dripping tap can save **15 liters per day**.  
-            """)
+# Initialize session state
+if "module" not in st.session_state:
+    st.session_state.module = 1
+if "audience" not in st.session_state:
+    st.session_state.audience = "Adult"
+if "video_completed" not in st.session_state:
+    st.session_state.video_completed = False
 
-            # Video resources
-            st.video("https://www.youtube.com/watch?v=4rO4pYlQH5M")  # Example video
-            st.video("https://www.youtube.com/watch?v=HMblNYq69fg")  # Example video
+st.title("📘 WaterGuard Education Course")
+
+# Select path
+audience = st.radio("👤 Who are you?", ["Adult", "Kid"])
+st.session_state.audience = audience
+
+# Adult course modules (expanded >300 words each)
+adult_modules = {
+    1: {
+        "title": "💧 Module 1: The Water Challenge in Bahrain",
+        "content": """
+Bahrain is one of the most water-stressed countries in the world. On average, the country receives less than **80 mm of rainfall annually**, which is not nearly enough to meet the needs of its citizens. For decades, Bahrain has depended on **groundwater aquifers** and **desalination plants** as its main sources of drinking water. Groundwater has been heavily over-extracted, leading to **salinity intrusion from the sea**, making much of it unsuitable for human use. As a result, Bahrain now relies on desalination for **over 90% of its freshwater supply**.  
+
+Desalination, while effective, is both **energy-intensive and environmentally costly**. Powering desalination plants requires large amounts of fossil fuels, which contributes to greenhouse gas emissions. Additionally, the process creates **brine waste**, a salty byproduct that is often discharged back into the sea, harming marine ecosystems such as coral reefs, which are already under stress due to warming waters.  
+
+Another critical challenge is **consumption behavior**. A typical resident of Bahrain uses **250–300 liters of water per day**, which is nearly double the international average of 150 liters. Much of this consumption is wasted through overuse in household activities, inefficient appliances, and undetected leaks. With a population of around 1.5 million, this means Bahrainis are using hundreds of millions of liters every single day — a pace that is unsustainable given limited natural resources.  
+
+Experts project that if current trends continue, Bahrain could face **serious water shortages by 2050**, even with desalination. Rising energy costs, climate change, and higher demand due to population growth will only worsen the crisis. This module highlights why **behavioral change and technological adoption** — like smart leak detection, efficient appliances, and water-conscious habits — are essential to secure Bahrain’s water future.
+        """,
+        "video": "https://www.youtube.com/watch?v=YFt3ONM7eH0"
+    },
+    2: {
+        "title": "♻️ Module 2: Smart Daily Practices",
+        "content": """
+Daily water-saving practices in Bahrain must go beyond simple awareness campaigns. Households and businesses alike need to adopt **structured, measurable changes** that reduce water use without compromising quality of life.  
+
+One of the most effective ways is to install **low-flow taps and dual-flush toilets**. For example, a traditional faucet can release 15 liters per minute, while a low-flow version reduces this to 6 liters without affecting performance. Dual-flush toilets can save up to **50% of water per flush**, cutting household toilet-related water use by thousands of liters annually.  
+
+In Bahrain, much of the outdoor water use is linked to **gardening and landscaping**. Irrigating lawns with freshwater is highly unsustainable. Instead, households are encouraged to plant **native or drought-resistant species** that thrive with minimal irrigation. Furthermore, watering should only occur during **early mornings or evenings**, reducing evaporation losses by up to 30%.  
+
+Greywater reuse is another critical practice. This involves recycling water from sinks, showers, and washing machines for non-drinking purposes such as garden irrigation. Studies in the Gulf have shown that households adopting greywater systems reduce freshwater demand by **20–30%**.  
+
+Businesses can also play a role. Hotels in Bahrain, for instance, have started using **sensor-based taps** that run only when hands are under the faucet, drastically reducing waste. Smart irrigation systems in commercial properties adjust water delivery based on soil moisture levels and weather conditions.  
+
+These practices are not just environmentally sound — they are financially beneficial. For instance, a Manama household that switched to water-saving appliances reported a **27% reduction in water bills** within six months.  
+
+Ultimately, smart daily practices align with Bahrain’s national strategy for **sustainable water management**, helping the country balance its limited resources against growing demand.
+        """,
+        "video": "https://www.youtube.com/watch?v=U6pAB4yQ58U"
+    },
+    3: {
+        "title": "🔧 Module 3: Leak Prevention & Detection",
+        "content": """
+One of the most overlooked yet impactful areas of water conservation in Bahrain is **leak detection and prevention**. Studies have shown that up to **20% of household water use in the Gulf is lost to leaks** — often unnoticed for months until bills arrive.  
+
+For example, a dripping tap that releases one drop per second wastes around **15 liters of water per day** — enough to fill a small bucket. More severe leaks, such as a constantly running toilet, can waste up to **750 liters daily**. This not only inflates household bills but also puts unnecessary pressure on Bahrain’s desalination plants.  
+
+Traditional leak detection relies on manual inspections, but with **smart technologies like WaterGuard**, households can continuously monitor water flow in real-time. The system detects unusual patterns, such as a sudden spike in consumption during off-hours, and alerts the user instantly. This is especially important for Bahrain’s older housing stock, where plumbing issues are more common.  
+
+On a larger scale, municipal water systems in Bahrain also lose significant amounts of water due to aging infrastructure. Non-revenue water (NRW) — water produced but lost before it reaches consumers — is estimated to be **15–25%** in many Gulf states. Deploying IoT sensors and AI-powered predictive analytics in pipelines can drastically reduce these losses, saving both water and energy.  
+
+Preventive maintenance is equally critical. Homeowners should schedule regular plumbing inspections every **6–12 months**, particularly in properties with outdated systems. Early detection prevents costly damage to walls, flooring, and foundations.  
+
+Case studies from other Gulf nations show that integrated leak detection systems reduce household water waste by **30–40% annually**. For Bahrain, scaling such practices across the country could save **tens of millions of liters each year**, directly supporting both economic and environmental sustainability.
+        """,
+        "video": "https://www.youtube.com/watch?v=HMblNYq69fg"
+    },
+    4: {
+        "title": "🏢 Module 4: Industry & Community",
+        "content": """
+While households play a critical role in conservation, **industries, businesses, and communities** in Bahrain are equally important stakeholders in addressing the water crisis.  
+
+The hospitality sector, particularly hotels and resorts, is one of the largest water consumers. A single hotel room can use between **300–500 liters of water per day**, mostly from laundry, kitchens, and guest bathrooms. To tackle this, many hotels in Bahrain are adopting **greywater recycling systems**, which reuse treated wastewater for landscaping and cooling purposes. Some hotels report water savings of up to **40% annually** through these systems.  
+
+Shopping malls and large commercial complexes are implementing **smart irrigation and cooling systems**, reducing outdoor water waste. Meanwhile, Bahrain’s **government-led campaigns** encourage businesses to adopt conservation practices, offering incentives such as reduced utility tariffs for companies that demonstrate measurable reductions in consumption.  
+
+Communities also play a pivotal role. Schools in Bahrain have integrated **water awareness programs** into their curricula, teaching children to value water from an early age. Some neighborhoods have piloted **community water-saving challenges**, where households compete to achieve the lowest water consumption, fostering a culture of accountability and cooperation.  
+
+On a national level, Bahrain is part of the **GCC Integrated Water Strategy**, which emphasizes regional cooperation in water management, desalination innovation, and conservation. This alignment helps the country benefit from shared technologies and best practices.  
+
+By combining industry-driven efficiency measures with community-level engagement, Bahrain can reduce water waste on both macro and micro scales. This holistic approach ensures that conservation is not just an individual responsibility, but a collective mission that supports **economic growth, environmental protection, and national security**.
+        """,
+        "video": "https://www.youtube.com/watch?v=zVZ2iK2dJdM"
+    },
+    5: {
+        "title": "🚀 Module 5: The Future of Water in Bahrain",
+        "content": """
+Looking ahead, the future of water management in Bahrain will be shaped by **technological innovation, policy reforms, and behavioral change**.  
+
+Desalination will remain the backbone of Bahrain’s water supply, but new methods such as **solar-powered desalination** and **nanotechnology-based filtration** promise to make the process more energy-efficient and environmentally friendly. Researchers are also exploring the use of **biological processes** to treat wastewater for reuse in agriculture and industry.  
+
+Artificial intelligence will play a central role. AI can analyze patterns of water use, predict future leaks, and optimize distribution across the national grid. Combined with IoT devices and smart meters, AI will enable **real-time monitoring at both household and municipal levels**. Robotics will assist in inspecting and cleaning pipelines, extending infrastructure lifespan and preventing costly failures.  
+
+Policy reforms are equally important. Water pricing structures may shift to encourage conservation, with higher tariffs for excessive use. Incentives for households and businesses to adopt **water-efficient technologies** will accelerate adoption.  
+
+Behavioral change, however, remains the most critical element. If every resident of Bahrain reduced their daily usage by just **50 liters**, the country could save over **50 million liters of water annually**. This would significantly reduce the load on desalination plants and help preserve marine ecosystems.  
+
+Ultimately, the future of Bahrain’s water security depends on a **triple strategy**: leveraging **technology**, implementing **progressive policies**, and fostering **a culture of conservation** across all levels of society. The role of initiatives like WaterGuard will be vital in achieving this sustainable vision.
+        """,
+        "video": "https://www.youtube.com/watch?v=4rO4pYlQH5M"
+    }
+}
+
+# Total modules
+total_modules = len(adult_modules)
+
+# Load current module
+if audience == "Adult":
+    current = adult_modules[st.session_state.module]
+
+    st.header(current["title"])
+    st.write(current["content"])
+    st.video(current["video"])
+
+    # Mark as completed
+    if st.button("✅ I finished this module"):
+        st.session_state.video_completed = True
+
+    # Navigation
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("⬅️ Back") and st.session_state.module > 1:
+            st.session_state.module -= 1
+            st.session_state.video_completed = False
+    with col2:
+        if st.button("➡️ Next") and st.session_state.video_completed and st.session_state.module < total_modules:
+            st.session_state.module += 1
+            st.session_state.video_completed = False
+
+    # Completion
+    if st.session_state.module == total_modules and st.session_state.video_completed:
+        st.balloons()
+        st.success("🎉 Congratulations! You completed the WaterGuard Adult Course.")
+
 
         elif lang == "العربية":
             st.subheader("💧 الوحدة 1: ممارسات يومية ذكية")
