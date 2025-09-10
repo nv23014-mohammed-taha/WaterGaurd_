@@ -685,7 +685,7 @@ st.title("📘 WaterGuard Education Course")
 audience = st.radio("👤 Who are you?", ["Adult", "Kid"])
 st.session_state.audience = audience
 
-import streamlit as st
+
 
 # Initialize session state
 if "module" not in st.session_state:
