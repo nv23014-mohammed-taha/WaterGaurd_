@@ -735,8 +735,8 @@ if page == "Education":
         - Remind parents to fix leaks quickly.  
         - Use a bucket to water plants instead of a hose.  
         """)
-        st.video("https://www.youtube.com/watch?v=h8oKwD8M1xY")  # Fun kids video
-        st.video("https://www.youtube.com/watch?v=Q0VwWfwCtS8")  # Cartoon style
+        st.video("https://www.youtube.com/watch?v=5J3cw4biWWo")  # Fun kids video
+        st.video("https://www.youtube.com/watch?v=nTcFXJT0Fsc")  # Cartoon style
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
