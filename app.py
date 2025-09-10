@@ -648,6 +648,96 @@ if page == "Robot Status":
 
     st.success("Pipes are healthy! ✅ No critical damage detected.")
 
+import streamlit as st
+
+st.sidebar.title("📊 Navigation")
+page = st.sidebar.radio("Go to:", ["Dashboard", "Reports", "Robot Status", "Education"])
+
+if page == "Education":
+    st.title("📘 Water Conservation Education")
+
+    # Intro context
+    st.markdown("""
+    🌍 **Bahrain is one of the driest countries in the world.**  
+    Despite this, it also has one of the **highest water usage rates per resident**.  
+    Conserving water is not only important for the environment but also for the future of Bahrain’s people and economy.  
+    """)
+
+    # Audience selection
+    audience = st.radio("👤 Who are you?", ["Adult", "Kid"])
+
+    # Language selector
+    lang = st.selectbox("🌍 Choose Language:", ["English", "العربية", "Français"])
+
+    # Course content
+    if audience == "Adult":
+        if lang == "English":
+            st.subheader("💧 Module 1: Smart Daily Practices")
+            st.write("""
+            - Install water-efficient appliances (taps, toilets, washing machines).  
+            - Water gardens in the early morning or evening to reduce evaporation.  
+            - Collect and reuse rainwater where possible.  
+            - Track your daily usage using smart apps like WaterGuard.  
+            """)
+
+            st.subheader("♻️ Module 2: Preventing Leaks & Saving Money")
+            st.write("""
+            - Regularly inspect your pipes for small leaks.  
+            - Schedule professional inspections to prevent costly damage.  
+            - Fixing one dripping tap can save **15 liters per day**.  
+            """)
+
+            # Video resources
+            st.video("https://www.youtube.com/watch?v=4rO4pYlQH5M")  # Example video
+            st.video("https://www.youtube.com/watch?v=HMblNYq69fg")  # Example video
+
+        elif lang == "العربية":
+            st.subheader("💧 الوحدة 1: ممارسات يومية ذكية")
+            st.write("""
+            - تركيب أدوات منزلية موفرة للمياه.  
+            - ري الحدائق في الصباح الباكر أو المساء لتقليل التبخر.  
+            - جمع مياه الأمطار وإعادة استخدامها.  
+            - تتبع استهلاكك اليومي باستخدام تطبيقات ذكية مثل WaterGuard.  
+            """)
+
+            st.subheader("♻️ الوحدة 2: منع التسربات وتوفير المال")
+            st.write("""
+            - افحص أنابيب المياه بانتظام.  
+            - قم بجدولة فحوصات دورية لمنع الأضرار المكلفة.  
+            - إصلاح صنبور يقطر يمكن أن يوفر **15 لتر يوميًا**.  
+            """)
+
+            st.video("https://www.youtube.com/watch?v=mi_K7eLNz_M")  # Arabic water saving video
+
+        elif lang == "Français":
+            st.subheader("💧 Module 1 : Pratiques quotidiennes intelligentes")
+            st.write("""
+            - Installez des appareils économes en eau.  
+            - Arrosez le jardin tôt le matin ou le soir pour limiter l’évaporation.  
+            - Collectez et réutilisez l’eau de pluie.  
+            - Suivez votre consommation avec des applications intelligentes comme WaterGuard.  
+            """)
+
+            st.subheader("♻️ Module 2 : Prévenir les fuites et économiser de l’argent")
+            st.write("""
+            - Inspectez régulièrement vos canalisations.  
+            - Planifiez des contrôles réguliers pour éviter des réparations coûteuses.  
+            - Réparer un robinet qui goutte peut économiser **15 litres par jour**.  
+            """)
+
+            st.video("https://www.youtube.com/watch?v=zVZ2iK2dJdM")  # French video
+
+    elif audience == "Kid":
+        st.subheader("🌟 Fun Water Saving Tips for Kids")
+        st.write("""
+        - Don’t leave the tap running when washing your hands.  
+        - Take short showers instead of baths.  
+        - Remind parents to fix leaks quickly.  
+        - Use a bucket to water plants instead of a hose.  
+        """)
+        st.video("https://www.youtube.com/watch?v=h8oKwD8M1xY")  # Fun kids video
+        st.video("https://www.youtube.com/watch?v=Q0VwWfwCtS8")  # Cartoon style
+
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
 
