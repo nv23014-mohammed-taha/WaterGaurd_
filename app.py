@@ -585,6 +585,69 @@ if lang == "en":
             <p style="margin-top: 0.5rem;">{testimonial}</p>
         </div>
         """, unsafe_allow_html=True)
+
+import streamlit as st
+import time
+
+# Example alert simulation
+if "leak_detected" not in st.session_state:
+    st.session_state.leak_detected = False
+
+st.title("🚨 WaterGuard Leak Alerts")
+
+if st.button("Simulate Leak Detection"):
+    st.session_state.leak_detected = True
+
+if st.session_state.leak_detected:
+    placeholder = st.empty()
+    for i in range(6):  # Flash 3 times
+        placeholder.error("⚠️ Leak Detected in Kitchen Pipe! Risk Level: HIGH")
+        time.sleep(0.5)
+        placeholder.empty()
+        time.sleep(0.5)
+import plotly.express as px
+import pandas as pd
+
+st.sidebar.title("📊 Navigation")
+page = st.sidebar.radio("Go to:", ["Dashboard", "Reports", "Robot Status"])
+
+if page == "Reports":
+    st.title("📊 Water Usage Reports")
+
+    # Example dataset
+    df = pd.DataFrame({
+        "Day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "Usage (L)": [120, 135, 110, 150, 200, 170, 140]
+    })
+
+    # Plotly line chart
+    fig = px.line(df, x="Day", y="Usage (L)", markers=True,
+                  title="Weekly Water Usage")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Prediction (dummy example)
+    st.success("🤖 AI Prediction: Medium risk of leak in Bathroom pipe within 2 weeks.")
+
+import time
+
+if page == "Robot Status":
+    st.title("🤖 Pipe Inspection & Cleaning")
+
+    progress = st.progress(0)
+    status_text = st.empty()
+
+    for i in range(101):
+        progress.progress(i)
+        if i < 30:
+            status_text.text("🔍 Inspecting pipes...")
+        elif i < 70:
+            status_text.text("🧽 Cleaning buildup...")
+        else:
+            status_text.text("✅ Inspection & cleaning complete.")
+        time.sleep(0.05)
+
+    st.success("Pipes are healthy! ✅ No critical damage detected.")
+
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
 
