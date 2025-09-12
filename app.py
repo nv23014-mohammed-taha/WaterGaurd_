@@ -1160,3 +1160,260 @@ with top_tabs[2]:
         <p class="faq-answer" style="margin-top: 0.4rem;">{a}</p>
         </div>
         """, unsafe_allow_html=True)
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import IsolationForest
+import matplotlib.pyplot as plt
+import seaborn as sns
+import random
+import base64
+from streamlit.components.v1 import html
+import plotly.express as px
+import json
+from prophet import Prophet  # NEW for forecasting
+
+# ----------------------------
+# Page setup
+# ----------------------------
+sns.set_style("whitegrid")
+st.set_page_config(page_title="WaterGuard", layout="wide")
+
+# ----------------------------
+# CSS Styles
+# ----------------------------
+st.markdown("""<style>
+.stApp { color: #f0f0f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+.stButton>button {
+    background-color: black; color: white; border-radius: 10px; padding: 10px 20px;
+    font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease;
+}
+.stButton>button:hover { background-color: #333; transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15); }
+.testimonial-card {
+    background: rgba(255, 255, 255, 0.9); padding: 1rem; border-radius: 10px;
+    margin-bottom: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #000;
+}
+.testimonial-profile { display: flex; align-items: center; margin-top: 10px; }
+.testimonial-profile .emoji { font-size: 2rem; margin-right: 10px; }
+.faq-answer { color: #000; }
+.anomaly-alert {
+    background-color: #fcebeb; color: #9f2a2a; padding: 1rem;
+    border-radius: 10px; border: 1px solid #f5c6cb; margin-top: 1rem;
+    font-weight: bold; text-align: center;
+}
+</style>""", unsafe_allow_html=True)
+
+# ----------------------------
+# Session state setup
+# ----------------------------
+if "lang" not in st.session_state: st.session_state.lang = "en"
+if "course_progress" not in st.session_state: st.session_state.course_progress = 0
+if "current_module" not in st.session_state: st.session_state.current_module = 0
+if "quiz_scores" not in st.session_state: st.session_state.quiz_scores = {}
+if "reward_claimed" not in st.session_state: st.session_state.reward_claimed = {}
+if "rewards" not in st.session_state: st.session_state.rewards = 0
+if "completed_quizzes" not in st.session_state: st.session_state.completed_quizzes = []
+
+# ----------------------------
+# Language toggle
+# ----------------------------
+lang_map = {"English": "en", "العربية": "ar", "Français": "fr"}
+language_selection = st.sidebar.radio("🌐 Language", list(lang_map.keys()))
+st.session_state.lang = lang_map[language_selection]
+lang = st.session_state.lang
+
+# ----------------------------
+# Background image
+# ----------------------------
+def set_background(image_path):
+    # NOTE: You will need to provide a water_bg.jpg image in the same directory for this to work.
+    # The try/except block will prevent the app from crashing if the image is not found.
+    try:
+        with open(image_path, "rb") as img_file:
+            encoded = base64.b64encode(img_file.read()).decode()
+            st.markdown(f"""
+            <style>
+            .stApp {{
+                background-image: url("data:image/jpg;base64,{encoded}");
+                background-size: cover; background-position: center;
+                background-repeat: no-repeat; background-attachment: fixed;
+            }}
+            .stApp::before {{
+                content: ""; position: fixed; top: 0; left: 0;
+                width: 100vw; height: 100vh; background: rgba(0,0,0,0.45);
+                z-index: -1;
+            }}
+            </style>""", unsafe_allow_html=True)
+    except FileNotFoundError: pass
+set_background("water_bg.jpg")
+
+# ----------------------------
+# Data simulation + anomalies
+# ----------------------------
+@st.cache_data
+def simulate_data():
+    np.random.seed(42)
+    hours = 365 * 24
+    date_range = pd.date_range(start="2024-01-01", periods=hours, freq="H")
+    usage_main = np.random.normal(12, 3, hours).clip(0, 50)
+    usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
+    usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
+    usage_bathroom = np.random.normal(4, 1.5, hours).clip(0, 15)
+
+    df_local = pd.DataFrame({
+        "timestamp": date_range,
+        "usage_main_liters": usage_main,
+        "usage_garden_liters": usage_garden,
+        "usage_kitchen_liters": usage_kitchen,
+        "usage_bathroom_liters": usage_bathroom,
+    })
+    df_local["usage_liters"] = df_local[
+        ["usage_main_liters","usage_garden_liters","usage_kitchen_liters","usage_bathroom_liters"]
+    ].sum(axis=1)
+    df_local["date"] = df_local["timestamp"].dt.date
+
+    # Inject anomalies
+    anomaly_indices = random.sample(range(len(df_local)), int(0.05 * len(df_local)))
+    for i in anomaly_indices:
+        df_local.loc[i, ["usage_main_liters","usage_garden_liters",
+                         "usage_kitchen_liters","usage_bathroom_liters"]] *= np.random.uniform(2, 5)
+    df_local["usage_liters"] = df_local[
+        ["usage_main_liters","usage_garden_liters","usage_kitchen_liters","usage_bathroom_liters"]
+    ].sum(axis=1)
+    return df_local
+
+df = simulate_data()
+model = IsolationForest(contamination=0.05, random_state=42)
+df["anomaly"] = model.fit_predict(df[["usage_liters"]])
+df["anomaly"] = df["anomaly"].map({1:"Normal",-1:"Anomaly"})
+
+# ----------------------------
+# Tabs
+# ----------------------------
+tab_labels = {
+    "en": ["Course", "Bahrain Water", "Dashboard", "Forecasting", "Robotics", "Sustainability"],
+    "ar": ["الدورة التدريبية", "تاريخ المياه في البحرين", "لوحة التحكم", "التنبؤ", "الروبوتات", "الاستدامة"],
+    "fr": ["Cours", "Eau à Bahreïn", "Tableau de bord", "Prévisions", "Robotique", "Durabilité"]
+}
+top_tabs = st.tabs(tab_labels[lang])
+
+# ----------------------------
+# Course Tab (Placeholder)
+# ----------------------------
+with top_tabs[0]:
+    st.header("📝 WaterGuard Course")
+    st.write("This is a placeholder for the course content. You can add your modules, quizzes, and rewards system here.")
+
+# ----------------------------
+# Bahrain Water Tab (Placeholder)
+# ----------------------------
+with top_tabs[1]:
+    st.header("💧 The History of Water in Bahrain")
+    st.write("This is a placeholder for the historical content and information about water in Bahrain.")
+
+# ----------------------------
+# Dashboard Tab (Placeholder)
+# ----------------------------
+with top_tabs[2]:
+    st.header("📊 Your Personal Dashboard")
+    st.write("This is a placeholder for the user's water usage dashboard. You can display graphs and anomaly alerts here.")
+
+# ----------------------------
+# Forecasting Tab (Added from user code)
+# ----------------------------
+with top_tabs[3]:
+    st.header("📈 Predictive Forecasting")
+    st.write("This model predicts daily water usage for the next 30 days.")
+
+    df_daily = df.set_index("timestamp").resample("D")["usage_liters"].sum().reset_index()
+    df_daily.columns = ["ds", "y"]
+
+    model = Prophet()
+    model.fit(df_daily)
+    future = model.make_future_dataframe(periods=30)
+    forecast = model.predict(future)
+
+    fig_forecast = px.line(forecast, x="ds", y="yhat", title="Predicted Daily Usage")
+    st.plotly_chart(fig_forecast, use_container_width=True)
+
+    daily_quota = 1500
+    high_risk = forecast[forecast["yhat"] > daily_quota * 1.1]
+    if not high_risk.empty:
+        st.warning(f"⚠ High-risk days detected: {len(high_risk)} upcoming")
+
+# ----------------------------
+# Robotics Tab (Added from user code)
+# ----------------------------
+with top_tabs[4]:
+    st.header("🤖 Robotic Pipe Inspection Simulation")
+
+    lang_texts = {
+        "en": {
+            "intro": "The WaterGuard robot inspects and cleans pipes to prevent leaks, blockages, and contamination.",
+            "steps": [
+                ("🚪 Step 1: Entry", "The robot enters the pipe network through an access point."),
+                ("🔦 Step 2: Scanning", "360° cameras and sensors detect cracks, rust, or buildup."),
+                ("🧹 Step 3: Cleaning", "Brushes and ultrasonic tools remove sediment and buildup."),
+                ("💡 Step 4: Repair Assistance", "Laser mapping highlights weak spots for technicians."),
+                ("📡 Step 5: Reporting", "A full health report is sent to the dashboard.")
+            ]
+        },
+        "ar": {
+            "intro": "يقوم روبوت ووتر جارد بفحص وتنظيف الأنابيب لمنع التسربات والانسداد والتلوث.",
+            "steps": [
+                ("🚪 الخطوة 1: الدخول", "يدخل الروبوت شبكة الأنابيب عبر نقطة وصول."),
+                ("🔦 الخطوة 2: الفحص", "كاميرات وأجهزة استشعار بزاوية 360° تكشف الشقوق أو الصدأ أو الترسبات."),
+                ("🧹 الخطوة 3: التنظيف", "تزيل الفرشاة والأدوات بالموجات فوق الصوتية الرواسب."),
+                ("💡 الخطوة 4: المساعدة في الإصلاح", "يحدد الليزر النقاط الضعيفة لفنيي الصيانة."),
+                ("📡 الخطوة 5: التقرير", "يتم إرسال تقرير كامل إلى لوحة التحكم.")
+            ]
+        },
+        "fr": {
+            "intro": "Le robot WaterGuard inspecte et nettoie les tuyaux pour prévenir fuites, blocages et contaminations.",
+            "steps": [
+                ("🚪 Étape 1 : Entrée", "Le robot entre dans le réseau par un point d'accès."),
+                ("🔦 Étape 2 : Inspection", "Caméras 360° et capteurs détectent fissures, rouille ou dépôts."),
+                ("🧹 Étape 3 : Nettoyage", "Brosses et outils ultrasoniques éliminent les dépôts."),
+                ("💡 Étape 4 : Réparations", "Cartographie laser des points faibles."),
+                ("📡 Étape 5 : Rapport", "Un rapport complet est envoyé au tableau de bord.")
+            ]
+        }
+    }
+
+    st.write(lang_texts[lang]["intro"])
+
+    step = st.slider("Choose step", 1, len(lang_texts[lang]["steps"]), 1)
+    title, desc = lang_texts[lang]["steps"][step-1]
+    st.subheader(title)
+    st.write(desc)
+
+    # NOTE: You will need to provide images named robotic_step_1.png through robotic_step_5.png
+    st.image(f"robotic_step_{step}.png", caption="Concept simulation", use_container_width=True)
+    st.info("Simulation only. Real-time robot feed would appear here.")
+
+# ----------------------------
+# Sustainability Tab (Added from user code)
+# ----------------------------
+with top_tabs[5]:
+    st.header("🌍 Sustainability & SDGs")
+    st.write("WaterGuard contributes to global sustainability goals:")
+
+    sdgs = {
+        "SDG 6": "💧 Clean Water & Sanitation — Smart leak detection ensures sustainable supply.",
+        "SDG 13": "🌍 Climate Action — Reduces desalination energy demand and emissions.",
+        "SDG 12": "♻ Responsible Consumption — Users monitor and reduce usage in real time.",
+        "SDG 9": "🏗 Innovation & Infrastructure — AI + IoT + robotics for resilient systems.",
+        "SDG 3": "❤️ Good Health — Prevents leaks/contamination, ensures safe water."
+    }
+    for goal, desc in sdgs.items():
+        st.markdown(f"**{goal}** — {desc}")
+
+    st.subheader("🚀 Future of WaterGuard")
+    st.write("""
+    - Expansion to municipal & industrial water systems  
+    - Integration with smart city infrastructure  
+    - AI-driven predictive leak prevention  
+    - Green energy powered desalination  
+    - Advanced robotics for automated maintenance  
+    """)
