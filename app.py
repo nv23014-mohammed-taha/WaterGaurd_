@@ -23,7 +23,11 @@ import random
 import base64
 from streamlit.components.v1 import html
 import plotly.express as px
+import plotly.graph_objects as go
+from statsmodels.tsa.arima.model import ARIMA
 import json
+import warnings
+warnings.filterwarnings('ignore')
 
 # Set a consistent style for plots and the page config
 sns.set_style("whitegrid")
@@ -33,53 +37,53 @@ st.set_page_config(page_title="WaterGuard", layout="wide")
 st.markdown("""
 <style>
 .stApp {
-    color: #f0f0f0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .stButton>button {
-    background-color: black;
-    color: white;
-    border-radius: 10px;
-    padding: 10px 20px;
-    font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    background-color: black;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
 }
 .stButton>button:hover {
-    background-color: #333;
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    background-color: #333;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }
 .testimonial-card {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 1rem;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    color: #000;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: #000;
 }
 .testimonial-profile {
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
 }
 .testimonial-profile .emoji {
-    font-size: 2rem;
-    margin-right: 10px;
+    font-size: 2rem;
+    margin-right: 10px;
 }
 .faq-answer {
-    color: #000;
+    color: #000;
 }
 .anomaly-alert {
-    background-color: #fcebeb;
-    color: #9f2a2a;
-    padding: 1rem;
-    border-radius: 10px;
-    border: 1px solid #f5c6cb;
-    margin-top: 1rem;
-    font-weight: bold;
-    text-align: center;
+    background-color: #fcebeb;
+    color: #9f2a2a;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #f5c6cb;
+    margin-top: 1rem;
+    font-weight: bold;
+    text-align: center;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -91,44 +95,44 @@ st.markdown("""
 
 # Set default language to English
 if "lang" not in st.session_state:
-    st.session_state.lang = "en"
+    st.session_state.lang = "en"
 
 # Initialize course and rewards state variables
 if "course_progress" not in st.session_state:
-    st.session_state.course_progress = 0
+    st.session_state.course_progress = 0
 if "current_module" not in st.session_state:
-    st.session_state.current_module = 0
+    st.session_state.current_module = 0
 if "quiz_scores" not in st.session_state:
-    st.session_state.quiz_scores = {}
+    st.session_state.quiz_scores = {}
 if "reward_claimed" not in st.session_state:
-    st.session_state.reward_claimed = {}
+    st.session_state.reward_claimed = {}
 if "rewards" not in st.session_state:
-    st.session_state.rewards = 0
+    st.session_state.rewards = 0
 if "completed_quizzes" not in st.session_state:
-    st.session_state.completed_quizzes = []
+    st.session_state.completed_quizzes = []
 
 # ----------------------------
 # LANGUAGE TOGGLE (sidebar)
 # ----------------------------
 
 title_text = {
-    "en": "Settings",
-    "ar": "الإعدادات",
-    "fr": "Paramètres"
+    "en": "Settings",
+    "ar": "الإعدادات",
+    "fr": "Paramètres"
 }
 st.sidebar.title(title_text[st.session_state.lang])
 
 language_selection = st.sidebar.radio(
-    "🌐 Language / اللغة / Langue",
-    ["English", "العربية", "Français"]
+    "🌐 Language / اللغة / Langue",
+    ["English", "العربية", "Français"]
 )
 
 if language_selection == "العربية":
-    st.session_state.lang = "ar"
+    st.session_state.lang = "ar"
 elif language_selection == "Français":
-    st.session_state.lang = "fr"
+    st.session_state.lang = "fr"
 else:
-    st.session_state.lang = "en"
+    st.session_state.lang = "en"
 
 lang = st.session_state.lang # Convenience variable for current language
 
@@ -136,110 +140,110 @@ lang = st.session_state.lang # Convenience variable for current language
 # SCREEN READER BUTTON (fixed)
 # ----------------------------
 def screen_reader_button(lang_local):
-    """Generates a button to activate a basic screen reader."""
-    lang_codes = {
-        "en": "en-US",
-        "ar": "ar-SA",
-        "fr": "fr-FR"
-    }
-    button_texts = {
-        "en": "🔊 Activate Screen Reader",
-        "ar": "🔊 تشغيل قارئ الشاشة",
-        "fr": "🔊 Activer le lecteur d'écran"
-    }
-    lang_code = lang_codes.get(lang_local, "en-US")
-    button_text = button_texts.get(lang_local, "🔊 Activate Screen Reader")
+    """Generates a button to activate a basic screen reader."""
+    lang_codes = {
+        "en": "en-US",
+        "ar": "ar-SA",
+        "fr": "fr-FR"
+    }
+    button_texts = {
+        "en": "🔊 Activate Screen Reader",
+        "ar": "🔊 تشغيل قارئ الشاشة",
+        "fr": "🔊 Activer le lecteur d'écran"
+    }
+    lang_code = lang_codes.get(lang_local, "en-US")
+    button_text = button_texts.get(lang_local, "🔊 Activate Screen Reader")
 
-    button_html = f"""
-    <button onclick="setTimeout(readPage, 500);" style="
-        background-color:#023e8a;
-        color:white;
-        border:none;
-        padding:10px 20px;
-        border-radius:10px;
-        cursor:pointer;
-        font-size:1rem;
-        margin-top: 1rem;
-        display: block;
-        {'margin-left: auto;' if lang_local in ['en', 'fr'] else 'margin-right: auto;'}
-    ">
-    {button_text}
-    </button>
-    <script>
-    function readPage() {{
-        const synth = window.speechSynthesis;
-        if (synth.speaking) {{
-            synth.cancel();
-        }}
-        const app = document.querySelector('.main') || document.querySelector('.stApp');
-        let text = '';
-        if (app) {{
-            const walker = document.createTreeWalker(app, NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            while(node = walker.nextNode()) {{
-                if(node.textContent.trim() !== '') {{
-                    text += node.textContent.trim() + '. ';
-                }}
-            }}
-        }} else {{
-            text = "Content not found.";
-        }}
+    button_html = f"""
+    <button onclick="setTimeout(readPage, 500);" style="
+        background-color:#023e8a;
+        color:white;
+        border:none;
+        padding:10px 20px;
+        border-radius:10px;
+        cursor:pointer;
+        font-size:1rem;
+        margin-top: 1rem;
+        display: block;
+        {'margin-left: auto;' if lang_local in ['en', 'fr'] else 'margin-right: auto;'}
+    ">
+    {button_text}
+    </button>
+    <script>
+    function readPage() {{
+        const synth = window.speechSynthesis;
+        if (synth.speaking) {{
+            synth.cancel();
+        }}
+        const app = document.querySelector('.main') || document.querySelector('.stApp');
+        let text = '';
+        if (app) {{
+            const walker = document.createTreeWalker(app, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while(node = walker.nextNode()) {{
+                if(node.textContent.trim() !== '') {{
+                    text += node.textContent.trim() + '. ';
+                }}
+            }}
+        }} else {{
+            text = "Content not found.";
+        }}
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = '{lang_code}';
-        synth.speak(utterance);
-    }}
-    </script>
-    """
-    html(button_html, height=80)
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = '{lang_code}';
+        synth.speak(utterance);
+    }}
+    </script>
+    """
+    html(button_html, height=80)
 
 with st.sidebar:
-    screen_reader_button(lang)
+    screen_reader_button(lang)
 
 # ----------------------------
 # BACKGROUND IMAGE
 # ----------------------------
 def set_background(image_path):
-    """Sets a full-screen background image."""
-    try:
-        with open(image_path, "rb") as img_file:
-            encoded = base64.b64encode(img_file.read()).decode()
-            st.markdown(
-                f"""
-                <style>
-                .stApp {{
-                    background-image: url("data:image/jpg;base64,{encoded}");
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
-                    background-attachment: fixed;
-                    position: relative;
-                    color: #f0f0f0;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    min-height: 100vh;
-                }}
-                .stApp::before {{
-                    content: "";
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
-                    background: rgba(0, 0, 0, 0.45);
-                    z-index: -1;
-                }}
-                [data-testid="stSidebar"] {{
-                    background: rgba(255, 255, 255, 0.95);
-                    border-radius: 0 15px 15px 0;
-                    padding: 1rem 1.5rem;
-                    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
-                }}
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-    except FileNotFoundError:
-        pass # Ignore if image file is not found
+    """Sets a full-screen background image."""
+    try:
+        with open(image_path, "rb") as img_file:
+            encoded = base64.b64encode(img_file.read()).decode()
+            st.markdown(
+                f"""
+                <style>
+                .stApp {{
+                    background-image: url("data:image/jpg;base64,{encoded}");
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-attachment: fixed;
+                    position: relative;
+                    color: #f0f0f0;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    min-height: 100vh;
+                }}
+                .stApp::before {{
+                    content: "";
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: rgba(0, 0, 0, 0.45);
+                    z-index: -1;
+                }}
+                [data-testid="stSidebar"] {{
+                    background: rgba(255, 255, 255, 0.95);
+                    border-radius: 0 15px 15px 0;
+                    padding: 1rem 1.5rem;
+                    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+                }}
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+    except FileNotFoundError:
+        pass # Ignore if image file is not found
 
 # Make sure you have 'water_bg.jpg' in the same directory as this script.
 set_background("water_bg.jpg")
@@ -248,112 +252,112 @@ set_background("water_bg.jpg")
 # COURSE & BAHRAIN HISTORY CONTENT
 # ----------------------------
 
-REWARD_FILS_PER_QUIZ = 500  # 500 fils
+REWARD_FILS_PER_QUIZ = 500  # 500 fils
 REWARD_BHD_PER_QUIZ = REWARD_FILS_PER_QUIZ / 1000.0
 
 # Course definition
 COURSE = [
-    {
-        "title_en": "Intro: Why Water Monitoring Matters (5 min)",
-        "title_ar": "مقدمة: لماذا تهم مراقبة المياه (5 دقائق)",
-        "title_fr": "Intro: Pourquoi la surveillance de l'eau est importante (5 min)",
-        "minutes": 5,
-        "content_en": ("Why household water monitoring is important: cost savings, leak "
-                       "prevention, and sustainability. How small behavioral changes lead to significant savings."),
-        "content_ar": ("لماذا تُعد مراقبة المياه المنزلية مهمة: توفير التكاليف، منع التسرب، "
-                       "والاستدامة. كيف تؤدي التغييرات الصغيرة في السلوك إلى وفورات كبيرة."),
-        "content_fr": ("Pourquoi la surveillance de l'eau à domicile est importante : économies, "
-                       "prévention des fuites et durabilité. Comment de petits changements de comportement "
-                       "peuvent entraîner des économies importantes."),
-        "quiz": [
-            {
-                "q_en": "Which is a direct benefit of early leak detection?",
-                "q_ar": "ما هي فائدة الكشف المبكر عن التسرب؟",
-                "q_fr": "Quel est un avantage direct de la détection précoce des fuites ?",
-                "options": ["Higher bills", "Increased water waste", "Lower repair costs", "More humid air"],
-                "options_ar": ["فواتير أعلى", "زيادة هدر المياه", "تكاليف إصلاح أقل", "هواء أكثر رطوبة"],
-                "options_fr": ["Factures plus élevées", "Gaspillage d'eau accru", "Coûts de réparation réduits", "Air plus humide"],
-                "answer": 2
-            }
-        ]
-    },
-    {
-        "title_en": "How WaterGuard Detects Anomalies (8 min)",
-        "title_ar": "كيف يكتشف ووتر جارد الأنماط الشاذة (8 دقائق)",
-        "title_fr": "Comment WaterGuard détecte les anomalies (8 min)",
-        "minutes": 8,
-        "content_en": ("Overview of sensors, hourly data, anomaly detection models (e.g., IsolationForest), "
-                       "and how thresholds & severity are set."),
-        "content_ar": ("نظرة عامة على الحساسات، البيانات الساعية، نماذج اكتشاف الخلل (مثل IsolationForest)، "
-                       "وكيف يتم ضبط العتبات وحدود الشدة."),
-        "content_fr": ("Aperçu des capteurs, des données horaires, des modèles de détection d'anomalies (par ex., IsolationForest), "
-                       "et comment les seuils et la gravité sont définis."),
-        "quiz": [
-            {
-                "q_en": "Which model is used in this prototype for anomaly detection?",
-                "q_ar": "أي نموذج تم استخدامه في هذا النموذج لاكتشاف الخلل؟",
-                "q_fr": "Quel modèle est utilisé dans ce prototype pour la détection des anomalies ?",
-                "options": ["KMeans", "IsolationForest", "Linear Regression", "PCA"],
-                "options_ar": ["KMeans", "IsolationForest", "الانحدار الخطي", "PCA"],
-                "options_fr": ["KMeans", "IsolationForest", "Régression linéaire", "ACP"],
-                "answer": 1
-            },
-            {
-                "q_en": "A severity labeled 'High' likely indicates:",
-                "q_ar": "ماذا تعني شدة 'عالية' عادةً؟",
-                "q_fr": "Une gravité étiquetée 'Élevée' indique probablement :",
-                "options": ["Very low usage", "Normal usage", "Very high usage", "No data"],
-                "options_ar": ["استهلاك منخفض جدًا", "استهلاك طبيعي", "استهلاك مرتفع جدًا", "لا توجد بيانات"],
-                "options_fr": ["Consommation très faible", "Consommation normale", "Consommation très élevée", "Pas de données"],
-                "answer": 2
-            }
-        ]
-    },
-    {
-        "title_en": "Practical Tips & Fixes (7 min)",
-        "title_ar": "نصائح عملية وإصلاحات (7 دقائق)",
-        "title_fr": "Conseils pratiques et réparations (7 min)",
-        "minutes": 7,
-        "content_en": ("Simple checks: fixture inspections, irrigation schedules, fixture replacement "
-                       "recommendations, and behavioral tips to minimize waste."),
-        "content_ar": ("فحوصات بسيطة: التحقق من التركيبات، جداول الري، توصيات استبدال التركيبات، "
-                       "ونصائح سلوكية لتقليل الهدر."),
-        "content_fr": ("Vérifications simples : inspection des installations, calendriers d'irrigation, "
-                       "recommandations de remplacement d'appareils, et conseils de comportement pour "
-                       "minimiser le gaspillage."),
-        "quiz": [
-            {
-                "q_en": "Which action helps most to reduce garden overwatering?",
-                "q_ar": "أي إجراء يساعد أكثر على تقليل الري الزائد للحديقة؟",
-                "q_fr": "Quelle action aide le plus à réduire l'excès d'arrosage du jardin ?",
-                "options": ["Run sprinklers more often", "Shorten irrigation intervals", "Schedule irrigation early morning", "Water during hottest hour"],
-                "options_ar": ["تشغيل الرشاشات بشكل متكرر", "تقصير فترات الري", "جدولة الري في الصباح الباكر", "الري في أشد ساعات الحر"],
-                "options_fr": ["Arroser plus souvent", "Raccourcir les intervalles d'irrigation", "Prévoir l'arrosage tôt le matin", "Arroser pendant l'heure la plus chaude"],
-                "answer": 2
-            }
-        ]
-    },
-    {
-        "title_en": "Reading Reports & Using Insights (5 min)",
-        "title_ar": "قراءة التقارير واستخدام الرؤى (5 دقائق)",
-        "title_fr": "Lecture des rapports et utilisation des informations (5 min)",
-        "minutes": 5,
-        "content_en": ("How to read hourly/daily/monthly visualizations, export CSV, and act on detected trends."),
-        "content_ar": ("كيفية قراءة الرسوم البيانية الساعية/اليومية/الشهرية، تصدير CSV، واتخاذ إجراءات بناءً على الاتجاهات المكتشفة."),
-        "content_fr": ("Comment lire les visualisations horaires/quotidiennes/mensuelles, exporter au format CSV, "
-                       "et agir sur les tendances détectées."),
-        "quiz": [
-            {
-                "q_en": "If daily usage spikes repeatedly at night, what is the first thing to check?",
-                "q_ar": "إذا تكررت زيادات الاستهلاك اليومية ليلاً، ما هو أول شيء يجب التحقق منه؟",
-                "q_fr": "Si la consommation quotidienne augmente à plusieurs reprises la nuit, que faut-il vérifier en premier lieu ?",
-                "options": ["Kitchen sink", "Garden irrigation / sprinkler", "Cooking routines", "Battery level"],
-                "options_ar": ["حوض المطبخ", "ري الحديقة / الرشاش", "روتين الطبخ", "مستوى البطارية"],
-                "options_fr": ["L'évier de la cuisine", "L'irrigation du jardin / l'arroseur", "Les routines de cuisine", "Le niveau de batterie"],
-                "answer": 1
-            }
-        ]
-    }
+    {
+        "title_en": "Intro: Why Water Monitoring Matters (5 min)",
+        "title_ar": "مقدمة: لماذا تهم مراقبة المياه (5 دقائق)",
+        "title_fr": "Intro: Pourquoi la surveillance de l'eau est importante (5 min)",
+        "minutes": 5,
+        "content_en": ("Why household water monitoring is important: cost savings, leak "
+                       "prevention, and sustainability. How small behavioral changes lead to significant savings."),
+        "content_ar": ("لماذا تُعد مراقبة المياه المنزلية مهمة: توفير التكاليف، منع التسرب، "
+                       "والاستدامة. كيف تؤدي التغييرات الصغيرة في السلوك إلى وفورات كبيرة."),
+        "content_fr": ("Pourquoi la surveillance de l'eau à domicile est importante : économies, "
+                       "prévention des fuites et durabilité. Comment de petits changements de comportement "
+                       "peuvent entraîner des économies importantes."),
+        "quiz": [
+            {
+                "q_en": "Which is a direct benefit of early leak detection?",
+                "q_ar": "ما هي فائدة الكشف المبكر عن التسرب؟",
+                "q_fr": "Quel est un avantage direct de la détection précoce des fuites ?",
+                "options": ["Higher bills", "Increased water waste", "Lower repair costs", "More humid air"],
+                "options_ar": ["فواتير أعلى", "زيادة هدر المياه", "تكاليف إصلاح أقل", "هواء أكثر رطوبة"],
+                "options_fr": ["Factures plus élevées", "Gaspillage d'eau accru", "Coûts de réparation réduits", "Air plus humide"],
+                "answer": 2
+            }
+        ]
+    },
+    {
+        "title_en": "How WaterGuard Detects Anomalies (8 min)",
+        "title_ar": "كيف يكتشف ووتر جارد الأنماط الشاذة (8 دقائق)",
+        "title_fr": "Comment WaterGuard détecte les anomalies (8 min)",
+        "minutes": 8,
+        "content_en": ("Overview of sensors, hourly data, anomaly detection models (e.g., IsolationForest), "
+                       "and how thresholds & severity are set."),
+        "content_ar": ("نظرة عامة على الحساسات، البيانات الساعية، نماذج اكتشاف الخلل (مثل IsolationForest)، "
+                       "وكيف يتم ضبط العتبات وحدود الشدة."),
+        "content_fr": ("Aperçu des capteurs, des données horaires, des modèles de détection d'anomalies (par ex., IsolationForest), "
+                       "et comment les seuils et la gravité sont définis."),
+        "quiz": [
+            {
+                "q_en": "Which model is used in this prototype for anomaly detection?",
+                "q_ar": "أي نموذج تم استخدامه في هذا النموذج لاكتشاف الخلل؟",
+                "q_fr": "Quel modèle est utilisé dans ce prototype pour la détection des anomalies ?",
+                "options": ["KMeans", "IsolationForest", "Linear Regression", "PCA"],
+                "options_ar": ["KMeans", "IsolationForest", "الانحدار الخطي", "PCA"],
+                "options_fr": ["KMeans", "IsolationForest", "Régression linéaire", "ACP"],
+                "answer": 1
+            },
+            {
+                "q_en": "A severity labeled 'High' likely indicates:",
+                "q_ar": "ماذا تعني شدة 'عالية' عادةً؟",
+                "q_fr": "Une gravité étiquetée 'Élevée' indique probablement :",
+                "options": ["Very low usage", "Normal usage", "Very high usage", "No data"],
+                "options_ar": ["استهلاك منخفض جدًا", "استهلاك طبيعي", "استهلاك مرتفع جدًا", "لا توجد بيانات"],
+                "options_fr": ["Consommation très faible", "Consommation normale", "Consommation très élevée", "Pas de données"],
+                "answer": 2
+            }
+        ]
+    },
+    {
+        "title_en": "Practical Tips & Fixes (7 min)",
+        "title_ar": "نصائح عملية وإصلاحات (7 دقائق)",
+        "title_fr": "Conseils pratiques et réparations (7 min)",
+        "minutes": 7,
+        "content_en": ("Simple checks: fixture inspections, irrigation schedules, fixture replacement "
+                       "recommendations, and behavioral tips to minimize waste."),
+        "content_ar": ("فحوصات بسيطة: التحقق من التركيبات، جداول الري، توصيات استبدال التركيبات، "
+                       "ونصائح سلوكية لتقليل الهدر."),
+        "content_fr": ("Vérifications simples : inspection des installations, calendriers d'irrigation, "
+                       "recommandations de remplacement d'appareils, et conseils de comportement pour "
+                       "minimiser le gaspillage."),
+        "quiz": [
+            {
+                "q_en": "Which action helps most to reduce garden overwatering?",
+                "q_ar": "أي إجراء يساعد أكثر على تقليل الري الزائد للحديقة؟",
+                "q_fr": "Quelle action aide le plus à réduire l'excès d'arrosage du jardin ?",
+                "options": ["Run sprinklers more often", "Shorten irrigation intervals", "Schedule irrigation early morning", "Water during hottest hour"],
+                "options_ar": ["تشغيل الرشاشات بشكل متكرر", "تقصير فترات الري", "جدولة الري في الصباح الباكر", "الري في أشد ساعات الحر"],
+                "options_fr": ["Arroser plus souvent", "Raccourcir les intervalles d'irrigation", "Prévoir l'arrosage tôt le matin", "Arroser pendant l'heure la plus chaude"],
+                "answer": 2
+            }
+        ]
+    },
+    {
+        "title_en": "Reading Reports & Using Insights (5 min)",
+        "title_ar": "قراءة التقارير واستخدام الرؤى (5 دقائق)",
+        "title_fr": "Lecture des rapports et utilisation des informations (5 min)",
+        "minutes": 5,
+        "content_en": ("How to read hourly/daily/monthly visualizations, export CSV, and act on detected trends."),
+        "content_ar": ("كيفية قراءة الرسوم البيانية الساعية/اليومية/الشهرية، تصدير CSV، واتخاذ إجراءات بناءً على الاتجاهات المكتشفة."),
+        "content_fr": ("Comment lire les visualisations horaires/quotidiennes/mensuelles, exporter au format CSV, "
+                       "et agir sur les tendances détectées."),
+        "quiz": [
+            {
+                "q_en": "If daily usage spikes repeatedly at night, what is the first thing to check?",
+                "q_ar": "إذا تكررت زيادات الاستهلاك اليومية ليلاً، ما هو أول شيء يجب التحقق منه؟",
+                "q_fr": "Si la consommation quotidienne augmente à plusieurs reprises la nuit, que faut-il vérifier en premier lieu ?",
+                "options": ["Kitchen sink", "Garden irrigation / sprinkler", "Cooking routines", "Battery level"],
+                "options_ar": ["حوض المطبخ", "ري الحديقة / الرشاش", "روتين الطبخ", "مستوى البطارية"],
+                "options_fr": ["L'évier de la cuisine", "L'irrigation du jardin / l'arroseur", "Les routines de cuisine", "Le niveau de batterie"],
+                "answer": 1
+            }
+        ]
+    }
 ]
 
 # Bahrain water history content
@@ -444,55 +448,55 @@ résilience de Bahreïn en matière d'eau.
 
 # Testimonial data
 testimonial_data = {
-    "en": [
-        "💡 WaterGuard helped me discover a hidden leak — saved me BHD 12 this month!",
-        "✅ The alerts are super accurate. I got notified before a serious leak became worse.",
-        "📈 I love the usage graphs. Makes me aware of our daily water behavior.",
-        "💧 We found our garden sprinkler system was overwatering — now fixed!",
-        "🏡 Great for homes with large families — helps avoid high bills.",
-        "📊 Downloaded a report and shared it with my landlord. Very professional!",
-        "📱 The dashboard is clean and easy to use. Even my kids get it!",
-        "🔔 Real-time alerts helped me stop water waste while traveling.",
-        "🧠 I never knew how much the kitchen used until WaterGuard showed me.",
-        "🌱 We’re now more eco-conscious thanks to WaterGuard’s tips and insights."
-    ],
-    "ar": [
-        "💡 ووتر جارد ساعدني في اكتشاف تسرب مخفي — ووفّر لي 12 دينارًا هذا الشهر!",
-        "✅ التنبيهات دقيقة للغاية. تم إخطاري قبل أن يتفاقم التسرب الخطير.",
-        "📈 أحب الرسوم البيانية للاستهلاك. تجعلني على دراية بسلوكنا اليومي في استخدام المياه.",
-        "💧 وجدنا أن نظام رشاش الحديقة كان يروي أكثر من اللازم — وتم إصلاحه الآن!",
-        "🏡 رائع للمنازل ذات العائلات الكبيرة — يساعد على تجنب الفواتير المرتفعة.",
-        "📊 قمت بتحميل تقرير وشاركته مع مالك العقار. احترافي جداً!",
-        "📱 لوحة التحكم نظيفة وسهلة الاستخدام. حتى أطفالي يفهمونها!",
-        "🔔 ساعدتني التنبيهات الفورية على إيقاف هدر المياه أثناء السفر.",
-        "🧠 لم أكن أعلم أبدًا كمية المياه التي يستهلكها المطبخ حتى أظهر لي ووتر جارد.",
-        "🌱 نحن الآن أكثر وعيًا بيئيًا بفضل نصائح ورؤى ووتر جارد."
-    ],
-    "fr": [
-        "💡 WaterGuard m'a aidé à découvrir une fuite cachée — j'ai économisé 12 BHD ce mois-ci !",
-        "✅ Les alertes sont très précises. J'ai été prévenu avant qu'une fuite sérieuse ne s'aggrave.",
-        "📈 J'adore les graphiques de consommation. Cela me rend conscient de notre comportement quotidien vis-à-vis de l'eau.",
-        "💧 Nous avons découvert que notre système d'arrosage de jardin arrosait trop — c'est maintenant réparé !",
-        "🏡 Idéal pour les familles nombreuses — cela aide à éviter les factures élevées.",
-        "📊 J'ai téléchargé un rapport et je l'ai partagé avec mon propriétaire. Très professionnel !",
-        "📱 Le tableau de bord est propre et facile à utiliser. Même mes enfants le comprennent !",
-        "🔔 Les alertes en temps réel m'ont aidé à arrêter le gaspillage d'eau pendant un voyage.",
-        "🧠 Je n'ai jamais su à quel point la cuisine consommait jusqu'à ce que WaterGuard me le montre.",
-        "🌱 Nous sommes maintenant plus éco-conscients grâce aux conseils et aux informations de WaterGuard."
-    ]
+    "en": [
+        "💡 WaterGuard helped me discover a hidden leak — saved me BHD 12 this month!",
+        "✅ The alerts are super accurate. I got notified before a serious leak became worse.",
+        "📈 I love the usage graphs. Makes me aware of our daily water behavior.",
+        "💧 We found our garden sprinkler system was overwatering — now fixed!",
+        "🏡 Great for homes with large families — helps avoid high bills.",
+        "📊 Downloaded a report and shared it with my landlord. Very professional!",
+        "📱 The dashboard is clean and easy to use. Even my kids get it!",
+        "🔔 Real-time alerts helped me stop water waste while traveling.",
+        "🧠 I never knew how much the kitchen used until WaterGuard showed me.",
+        "🌱 We’re now more eco-conscious thanks to WaterGuard’s tips and insights."
+    ],
+    "ar": [
+        "💡 ووتر جارد ساعدني في اكتشاف تسرب مخفي — ووفّر لي 12 دينارًا هذا الشهر!",
+        "✅ التنبيهات دقيقة للغاية. تم إخطاري قبل أن يتفاقم التسرب الخطير.",
+        "📈 أحب الرسوم البيانية للاستهلاك. تجعلني على دراية بسلوكنا اليومي في استخدام المياه.",
+        "💧 وجدنا أن نظام رشاش الحديقة كان يروي أكثر من اللازم — وتم إصلاحه الآن!",
+        "🏡 رائع للمنازل ذات العائلات الكبيرة — يساعد على تجنب الفواتير المرتفعة.",
+        "📊 قمت بتحميل تقرير وشاركته مع مالك العقار. احترافي جداً!",
+        "📱 لوحة التحكم نظيفة وسهلة الاستخدام. حتى أطفالي يفهمونها!",
+        "🔔 ساعدتني التنبيهات الفورية على إيقاف هدر المياه أثناء السفر.",
+        "🧠 لم أكن أعلم أبدًا كمية المياه التي يستهلكها المطبخ حتى أظهر لي ووتر جارد.",
+        "🌱 نحن الآن أكثر وعيًا بيئيًا بفضل نصائح ورؤى ووتر جارد."
+    ],
+    "fr": [
+        "💡 WaterGuard m'a aidé à découvrir une fuite cachée — j'ai économisé 12 BHD ce mois-ci !",
+        "✅ Les alertes sont très précises. J'ai été prévenu avant qu'une fuite sérieuse ne s'aggrave.",
+        "📈 J'adore les graphiques de consommation. Cela me rend conscient de notre comportement quotidien vis-à-vis de l'eau.",
+        "💧 Nous avons découvert que notre système d'arrosage de jardin arrosait trop — c'est maintenant réparé !",
+        "🏡 Idéal pour les familles nombreuses — cela aide à éviter les factures élevées.",
+        "📊 J'ai téléchargé un rapport et je l'ai partagé avec mon propriétaire. Très professionnel !",
+        "📱 Le tableau de bord est propre et facile à utiliser. Même mes enfants le comprennent !",
+        "🔔 Les alertes en temps réel m'ont aidé à arrêter le gaspillage d'eau pendant un voyage.",
+        "🧠 Je n'ai jamais su à quel point la cuisine consommait jusqu'à ce que WaterGuard me le montre.",
+        "🌱 Nous sommes maintenant plus éco-conscients grâce aux conseils et aux informations de WaterGuard."
+    ]
 }
 
 profiles = [
-    ("👨‍💼", "Khalid", "khalid_madan76@outlook.com"),
-    ("👨‍💼", "Yousef", "yousef_albahbhani76@gmail.com"),
-    ("👨‍💼", "Omar", "omar_abdullah36555@yahoo.com"),
-    ("👨‍💼", "Adel", "adel_doseri55@yahoo.com"),
-    ("👨‍💼", "Hassan", "hassan_al_anazi82@gmail.com"),
-    ("👩‍💼", "Noor", "noor_01_altwash98@yahoo.com"),
-    ("👩‍💼", "Mariam", "mariam_11_alekrawi@yahoo.com"),
-    ("👩‍💼", "Rana", "rana_al_shammri93@outlook.com"),
-    ("👩‍💼", "Zahra", "zahra_almtari31@outlook.com"),
-    ("👩‍💼", "Aisha", "aisha_buqais2306@gmail.com"),
+    ("👨‍💼", "Khalid", "khalid_madan76@outlook.com"),
+    ("👨‍💼", "Yousef", "yousef_albahbhani76@gmail.com"),
+    ("👨‍💼", "Omar", "omar_abdullah36555@yahoo.com"),
+    ("👨‍💼", "Adel", "adel_doseri55@yahoo.com"),
+    ("👨‍💼", "Hassan", "hassan_al_anazi82@gmail.com"),
+    ("👩‍💼", "Noor", "noor_01_altwash98@yahoo.com"),
+    ("👩‍💼", "Mariam", "mariam_11_alekrawi@yahoo.com"),
+    ("👩‍💼", "Rana", "rana_al_shammri93@outlook.com"),
+    ("👩‍💼", "Zahra", "zahra_almtari31@outlook.com"),
+    ("👩‍💼", "Aisha", "aisha_buqais2306@gmail.com"),
 ]
 
 
@@ -502,44 +506,44 @@ profiles = [
 
 @st.cache_data
 def simulate_data():
-    """Generates a year of simulated hourly water usage data with anomalies."""
-    np.random.seed(42)
-    hours = 365 * 24
-    date_range = pd.date_range(start='2024-01-01', periods=hours, freq='H')
+    """Generates a year of simulated hourly water usage data with anomalies."""
+    np.random.seed(42)
+    hours = 365 * 24
+    date_range = pd.date_range(start='2024-01-01', periods=hours, freq='H')
 
-    usage_main = np.random.normal(12, 3, hours).clip(0, 50)
-    usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
-    usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
-    usage_bathroom = np.random.normal(4, 1.5, hours).clip(0, 15)
+    usage_main = np.random.normal(12, 3, hours).clip(0, 50)
+    usage_garden = np.random.normal(5, 2, hours).clip(0, 20)
+    usage_kitchen = np.random.normal(3, 1, hours).clip(0, 10)
+    usage_bathroom = np.random.normal(4, 1.5, hours).clip(0, 15)
 
-    df_local = pd.DataFrame({
-        'timestamp': date_range,
-        'usage_main_liters': usage_main,
-        'usage_garden_liters': usage_garden,
-        'usage_kitchen_liters': usage_kitchen,
-        'usage_bathroom_liters': usage_bathroom,
-    })
+    df_local = pd.DataFrame({
+        'timestamp': date_range,
+        'usage_main_liters': usage_main,
+        'usage_garden_liters': usage_garden,
+        'usage_kitchen_liters': usage_kitchen,
+        'usage_bathroom_liters': usage_bathroom,
+    })
 
-    # Add total usage
-    df_local['usage_liters'] = df_local[[
-        'usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters'
-    ]].sum(axis=1)
+    # Add total usage
+    df_local['usage_liters'] = df_local[[
+        'usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters'
+    ]].sum(axis=1)
 
-    df_local['date'] = df_local['timestamp'].dt.date
+    df_local['date'] = df_local['timestamp'].dt.date
 
-    # Inject synthetic anomaly spikes (~5%)
-    num_anomalies = int(0.05 * len(df_local))
-    anomaly_indices = random.sample(range(len(df_local)), num_anomalies)
-    for i in anomaly_indices:
-        df_local.loc[i, ['usage_main_liters', 'usage_garden_liters',
-                         'usage_kitchen_liters', 'usage_bathroom_liters']] *= np.random.uniform(2, 5)
+    # Inject synthetic anomaly spikes (~5%)
+    num_anomalies = int(0.05 * len(df_local))
+    anomaly_indices = random.sample(range(len(df_local)), num_anomalies)
+    for i in anomaly_indices:
+        df_local.loc[i, ['usage_main_liters', 'usage_garden_liters',
+                         'usage_kitchen_liters', 'usage_bathroom_liters']] *= np.random.uniform(2, 5)
 
-    # Recalculate total after anomalies
-    df_local['usage_liters'] = df_local[[
-        'usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters'
-    ]].sum(axis=1)
+    # Recalculate total after anomalies
+    df_local['usage_liters'] = df_local[[
+        'usage_main_liters', 'usage_garden_liters', 'usage_kitchen_liters', 'usage_bathroom_liters'
+    ]].sum(axis=1)
 
-    return df_local
+    return df_local
 
 df = simulate_data()
 
@@ -550,16 +554,45 @@ df['anomaly'] = df['anomaly'].map({1: 'Normal', -1: 'Anomaly'})
 
 # Severity classification
 df['severity'] = pd.cut(df['usage_liters'],
-                        bins=[-np.inf, 20, 40, np.inf],
-                        labels=['Low', 'Medium', 'High'])
+                        bins=[-np.inf, 20, 40, np.inf],
+                        labels=['Low', 'Medium', 'High'])
+
+
+# ----------------------------
+# New "Predictive AI" function
+# ----------------------------
+@st.cache_data
+def run_prediction(data, forecast_hours=7 * 24):
+    """Trains an ARIMA model and generates a forecast."""
+    # Use the last 30 days of "normal" data for training the model
+    # We select a slice of the data that doesn't contain the randomly injected anomalies.
+    training_data = data.iloc[-30*24:-forecast_hours]
+    training_series = training_data['usage_liters']
+    
+    # Fit the ARIMA model (p=1, d=1, q=1 is a common starting point)
+    model = ARIMA(training_series, order=(1, 1, 1))
+    model_fit = model.fit()
+
+    # Generate the forecast
+    forecast = model_fit.forecast(steps=forecast_hours)
+
+    # Prepare a DataFrame for plotting
+    forecast_index = pd.date_range(
+        start=training_data['timestamp'].iloc[-1] + pd.Timedelta(hours=1),
+        periods=forecast_hours,
+        freq='H'
+    )
+    forecast_df = pd.DataFrame(forecast, index=forecast_index, columns=['predicted_usage'])
+    
+    return training_data, forecast_df
 
 # ----------------------------
 # Top tabs: Course, Bahrain History, Dashboard
 # ----------------------------
 tab_labels = {
-    "en": ["Course", "Bahrain Water", "Dashboard"],
-    "ar": ["الدورة التدريبية", "تاريخ المياه في البحرين", "لوحة التحكم"],
-    "fr": ["Cours", "Eau à Bahreïn", "Tableau de bord"]
+    "en": ["Course", "Bahrain Water", "Dashboard"],
+    "ar": ["الدورة التدريبية", "تاريخ المياه في البحرين", "لوحة التحكم"],
+    "fr": ["Cours", "Eau à Bahreïn", "Tableau de bord"]
 }
 
 top_tabs = st.tabs(tab_labels[lang])
@@ -568,595 +601,345 @@ top_tabs = st.tabs(tab_labels[lang])
 # Course Tab
 # ----------------------------
 with top_tabs[0]:
-    header_text = {
-        "en": "💡 WaterGuard — 30 Minute Course",
-        "ar": "💡ووتر جارد — دورة 30 دقيقة",
-        "fr": "💡 WaterGuard — Cours de 30 minutes"
-    }
-    st.header(header_text[lang])
+    header_text = {
+        "en": "💡 WaterGuard — 30 Minute Course",
+        "ar": "💡ووتر جارد — دورة 30 دقيقة",
+        "fr": "💡 WaterGuard — Cours de 30 minutes"
+    }
+    st.header(header_text[lang])
 
-    # Progress indicator
-    progress_fraction = st.session_state.course_progress / len(COURSE) if len(COURSE) > 0 else 0
-    st.progress(min(max(progress_fraction, 0.0), 1.0))
+    # Progress indicator
+    progress_fraction = st.session_state.course_progress / len(COURSE) if len(COURSE) > 0 else 0
+    st.progress(min(max(progress_fraction, 0.0), 1.0))
 
-    # Display modules list
-    modules_heading = {
-        "en": "### Modules",
-        "ar": "### الوحدات",
-        "fr": "### Modules"
-    }
-    st.markdown(modules_heading[lang])
-    module_titles = [(m[f"title_{lang}"] if lang in m else m["title_en"]) for m in COURSE]
-    status_texts = {
-        "en": {"completed": "✅ Completed", "current": "▶ Current"},
-        "ar": {"completed": "✅ مكتملة", "current": "▶الحالية"},
-        "fr": {"completed": "✅ Terminé", "current": "▶ Actuel"}
-    }
-    for idx, t in enumerate(module_titles):
-        status = ""
-        if idx < st.session_state.course_progress:
-            status = status_texts[lang]["completed"]
-        elif idx == st.session_state.current_module:
-            status = status_texts[lang]["current"]
-        st.write(f"{idx+1}. {t} {status}")
+    # Display modules list
+    modules_heading = {
+        "en": "### Modules",
+        "ar": "### الوحدات",
+        "fr": "### Modules"
+    }
+    st.markdown(modules_heading[lang])
+    module_titles = [(m[f"title_{lang}"] if lang in m else m["title_en"]) for m in COURSE]
+    status_texts = {
+        "en": {"completed": "✅ Completed", "current": "▶ Current"},
+        "ar": {"completed": "✅ مكتملة", "current": "▶الحالية"},
+        "fr": {"completed": "✅ Terminé", "current": "▶ Actuel"}
+    }
+    for idx, t in enumerate(module_titles):
+        status = ""
+        if idx < st.session_state.course_progress:
+            status = status_texts[lang]["completed"]
+        elif idx == st.session_state.current_module:
+            status = status_texts[lang]["current"]
+        st.write(f"{idx+1}. {t} {status}")
 
-    module_idx = st.session_state.current_module
-    module = COURSE[module_idx]
+    module_idx = st.session_state.current_module
+    module = COURSE[module_idx]
 
-    st.subheader(module[f"title_{lang}"])
-    st.write(module[f"content_{lang}"])
-    
-    estimated_time_text = {
-        "en": f"*Estimated time: {module['minutes']} min*",
-        "ar": f"*الوقت المقدر: {module['minutes']} دقيقة*",
-        "fr": f"*Temps estimé : {module['minutes']} min*"
-    }
-    st.write(estimated_time_text[lang])
+    st.subheader(module[f"title_{lang}"])
+    st.write(module[f"content_{lang}"])
+    
+    estimated_time_text = {
+        "en": f"*Estimated time: {module['minutes']} min*",
+        "ar": f"*الوقت المقدر: {module['minutes']} دقيقة*",
+        "fr": f"*Temps estimé : {module['minutes']} min*"
+    }
+    st.write(estimated_time_text[lang])
 
-    # Mark module complete button (progress only)
-    mark_button_text = {
-        "en": "Mark module complete",
-        "ar": "تحديد الوحدة كمكتملة",
-        "fr": "Marquer le module comme terminé"
-    }
-    success_message = {
-        "en": "Module marked complete.",
-        "ar": "تم تحديد الوحدة كمكتملة.",
-        "fr": "Module marqué comme terminé."
-    }
-    if st.button(mark_button_text[lang]):
-        st.session_state.course_progress = max(st.session_state.course_progress, module_idx + 1)
-        st.success(success_message[lang])
-        st.rerun()
+    # Mark module complete button (progress only)
+    mark_button_text = {
+        "en": "Mark module complete",
+        "ar": "تحديد الوحدة كمكتملة",
+        "fr": "Marquer le module comme terminé"
+    }
+    success_message = {
+        "en": "Module marked complete.",
+        "ar": "تم تحديد الوحدة كمكتملة.",
+        "fr": "Module marqué comme terminé."
+    }
+    if st.button(mark_button_text[lang]):
+        st.session_state.course_progress = max(st.session_state.course_progress, module_idx + 1)
+        st.success(success_message[lang])
+        st.rerun()
 
-    # Quiz UI for current module
-    if module.get("quiz"):
-        quiz_heading = {
-            "en": "### Quiz",
-            "ar": "### الاختبار",
-            "fr": "### Quiz"
-        }
-        st.markdown(quiz_heading[lang])
-        answers = {}
-        for qi, q in enumerate(module["quiz"]):
-            question_text = q[f"q_{lang}"] if lang in q else q["q_en"]
-            opts = q.get(f"options_{lang}", q["options"])
-            choice = st.radio(f"{qi+1}. {question_text}", opts, key=f"quiz_{module_idx}_{qi}")
-            answers[qi] = opts.index(choice)
+    # Quiz UI for current module
+    if module.get("quiz"):
+        quiz_heading = {
+            "en": "### Quiz",
+            "ar": "### الاختبار",
+            "fr": "### Quiz"
+        }
+        st.markdown(quiz_heading[lang])
+        answers = {}
+        for qi, q in enumerate(module["quiz"]):
+            question_text = q[f"q_{lang}"] if lang in q else q["q_en"]
+            opts = q.get(f"options_{lang}", q["options"])
+            choice = st.radio(f"{qi+1}. {question_text}", opts, key=f"quiz_{module_idx}_{qi}")
+            answers[qi] = opts.index(choice)
 
-        submit_quiz_text = {
-            "en": "Submit Quiz",
-            "ar": "إرسال الاختبار",
-            "fr": "Soumettre le quiz"
-        }
-        if st.button(submit_quiz_text[lang]):
-            total = len(module["quiz"])
-            correct = 0
-            for i_q, q_def in enumerate(module["quiz"]):
-                if answers.get(i_q) == q_def["answer"]:
-                    correct += 1
-            score_pct = (correct / total) * 100 if total > 0 else 0
-            st.session_state.quiz_scores[module_idx] = {"correct": correct, "total": total, "pct": score_pct}
-            passed = score_pct >= 80  # Pass threshold 80%
+        submit_quiz_text = {
+            "en": "Submit Quiz",
+            "ar": "إرسال الاختبار",
+            "fr": "Soumettre le quiz"
+        }
+        if st.button(submit_quiz_text[lang]):
+            total = len(module["quiz"])
+            correct = 0
+            for i_q, q_def in enumerate(module["quiz"]):
+                if answers.get(i_q) == q_def["answer"]:
+                    correct += 1
+            score_pct = (correct / total) * 100 if total > 0 else 0
+            st.session_state.quiz_scores[module_idx] = {"correct": correct, "total": total, "pct": score_pct}
+            passed = score_pct >= 80  # Pass threshold 80%
 
-            if passed:
-                success_message = {
-                    "en": f"Passed — Score: {score_pct:.0f}% — Reward earned: {REWARD_FILS_PER_QUIZ} fils (BHD {REWARD_BHD_PER_QUIZ:.3f})",
-                    "ar": f"ناجح — النسبة: {score_pct:.0f}% — جائزة: {REWARD_FILS_PER_QUIZ} فلس (ب.د {REWARD_BHD_PER_QUIZ:.3f})",
-                    "fr": f"Réussi — Score : {score_pct:.0f}% — Récompense gagnée : {REWARD_FILS_PER_QUIZ} fils (BHD {REWARD_BHD_PER_QUIZ:.3f})"
-                }
-                st.success(success_message[lang])
-                quiz_name = f"module_{module_idx}"
-                if quiz_name not in st.session_state.completed_quizzes:
-                    st.session_state.completed_quizzes.append(quiz_name)
-                    st.session_state.rewards += REWARD_FILS_PER_QUIZ
-                    st.session_state.reward_claimed[module_idx] = True
-            else:
-                warning_message = {
-                    "en": f"Not passed — Score: {score_pct:.0f}%. Try again!",
-                    "ar": f"لم تجتز — النسبة: {score_pct:.0f}%. حاول مرة أخرى!",
-                    "fr": f"Échoué — Score : {score_pct:.0f}%. Essayez encore !"
-                }
-                st.warning(warning_message[lang])
+            if passed:
+                success_message = {
+                    "en": f"Passed — Score: {score_pct:.0f}% — Reward earned: {REWARD_FILS_PER_QUIZ} fils (BHD {REWARD_BHD_PER_QUIZ:.3f})",
+                    "ar": f"ناجح — النسبة: {score_pct:.0f}% — جائزة: {REWARD_FILS_PER_QUIZ} فلس (ب.د {REWARD_BHD_PER_QUIZ:.3f})",
+                    "fr": f"Réussi — Score : {score_pct:.0f}% — Récompense gagnée : {REWARD_FILS_PER_QUIZ} fils (BHD {REWARD_BHD_PER_QUIZ:.3f})"
+                }
+                st.success(success_message[lang])
+                quiz_name = f"module_{module_idx}"
+                if quiz_name not in st.session_state.completed_quizzes:
+                    st.session_state.completed_quizzes.append(quiz_name)
+                    st.session_state.rewards += REWARD_FILS_PER_QUIZ
+                    st.session_state.reward_claimed[module_idx] = True
+            else:
+                warning_message = {
+                    "en": f"Not passed — Score: {score_pct:.0f}%. Try again!",
+                    "ar": f"لم تجتز — النسبة: {score_pct:.0f}%. حاول مرة أخرى!",
+                    "fr": f"Échoué — Score : {score_pct:.0f}%. Essayez encore !"
+                }
+                st.warning(warning_message[lang])
 
-    # Navigation buttons
-    col1, col2 = st.columns(2)
-    with col1:
-        prev_button_text = {
-            "en": "Previous module",
-            "ar": "الوحدة السابقة",
-            "fr": "Module précédent"
-        }
-        if st.button(prev_button_text[lang]):
-            if st.session_state.current_module > 0:
-                st.session_state.current_module -= 1
-                st.rerun()
-    with col2:
-        next_button_text = {
-            "en": "Next module",
-            "ar": "الوحدة التالية",
-            "fr": "Module suivant"
-        }
-        if st.button(next_button_text[lang]):
-            if st.session_state.current_module < len(COURSE) - 1:
-                st.session_state.current_module += 1
-                st.rerun()
+    # Navigation buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        prev_button_text = {
+            "en": "Previous module",
+            "ar": "الوحدة السابقة",
+            "fr": "Module précédent"
+        }
+        if st.button(prev_button_text[lang]):
+            if st.session_state.current_module > 0:
+                st.session_state.current_module -= 1
+                st.rerun()
+    with col2:
+        next_button_text = {
+            "en": "Next module",
+            "ar": "الوحدة التالية",
+            "fr": "Module suivant"
+        }
+        if st.button(next_button_text[lang]):
+            if st.session_state.current_module < len(COURSE) - 1:
+                st.session_state.current_module += 1
+                st.rerun()
 
-    # Certificate + rewards summary when complete
-    if st.session_state.course_progress >= len(COURSE):
-        st.balloons()
-        course_complete_text = {
-            "en": "Congratulations! You have successfully completed the WaterGuard Course.",
-            "ar": "تهانينا! لقد أكملت دورة ووتر جارد بنجاح.",
-            "fr": "Félicitations ! Vous avez terminé avec succès le cours WaterGuard."
-        }
-        st.success(course_complete_text[lang])
+    # Certificate + rewards summary when complete
+    if st.session_state.course_progress >= len(COURSE):
+        st.balloons()
+        course_complete_text = {
+            "en": "Congratulations! You have successfully completed the WaterGuard Course.",
+            "ar": "تهانينا! لقد أكملت دورة ووتر جارد بنجاح.",
+            "fr": "Félicitations ! Vous avez terminé avec succès le cours WaterGuard."
+        }
+        st.success(course_complete_text[lang])
 
-        rewards_summary_heading = {
-            "en": "### Rewards Summary",
-            "ar": "### ملخص الجوائز",
-            "fr": "### Résumé des récompenses"
-        }
-        st.markdown(rewards_summary_heading[lang])
+        rewards_summary_heading = {
+            "en": "### Rewards Summary",
+            "ar": "### ملخص المكافآت",
+            "fr": "### Résumé des récompenses"
+        }
+        st.markdown(rewards_summary_heading[lang])
+        rewards_summary_text = {
+            "en": f"You have earned a total of **{st.session_state.rewards} fils** (BHD {st.session_state.rewards/1000.0:.3f}) from completing the quizzes. Keep saving water and earning rewards!",
+            "ar": f"لقد حصلت على ما مجموعه **{st.session_state.rewards} فلس** (ب.د {st.session_state.rewards/1000.0:.3f}) من إكمال الاختبارات. استمر في توفير المياه وكسب المكافآت!",
+            "fr": f"Vous avez gagné un total de **{st.session_state.rewards} fils** (BHD {st.session_state.rewards/1000.0:.3f}) en terminant les quiz. Continuez à économiser l'eau et à gagner des récompenses !"
+        }
+        st.info(rewards_summary_text[lang])
 
-        total_earned_text = {
-            "en": f"Total earned: {st.session_state.rewards} fils (BHD {st.session_state.rewards/1000.0:.3f})",
-            "ar": f"المجموع المكتسب: {st.session_state.rewards} فلس (ب.د {st.session_state.rewards/1000.0:.3f})",
-            "fr": f"Total gagné : {st.session_state.rewards} fils (BHD {st.session_state.rewards/1000.0:.3f})"
-        }
-        st.write(total_earned_text[lang])
-
-        cert_text = f"WaterGuard Course Certificate\nUser: demo_user@example.com\nCompleted: YES\nScore Summary: {json.dumps(st.session_state.quiz_scores)}\nRewards (fils): {st.session_state.rewards}"
-        download_cert_text = {
-            "en": "Download Certificate (TXT)",
-            "ar": "تحميل الشهادة (TXT)",
-            "fr": "Télécharger le certificat (TXT)"
-        }
-        st.download_button(download_cert_text[lang], data=cert_text, file_name="waterguard_certificate.txt")
 
 # ----------------------------
-# Bahrain History Tab
+# Bahrain Water History Tab
 # ----------------------------
 with top_tabs[1]:
-    header_text = {
-        "en": "Bahrain Water: History & Future",
-        "ar": "تاريخ المياه في البحرين ومستقبلها",
-        "fr": "L'eau à Bahreïn : Histoire et Avenir"
-    }
-    st.header(header_text[lang])
+    header_text = {
+        "en": "💧 Bahrain's Water History",
+        "ar": "💧 تاريخ المياه في البحرين",
+        "fr": "💧 Histoire de l'eau à Bahreïn"
+    }
+    st.header(header_text[lang])
+    content = {
+        "en": BAHRAIN_HISTORY_EN,
+        "ar": BAHRAIN_HISTORY_AR,
+        "fr": BAHRAIN_HISTORY_FR
+    }
+    st.markdown(f'<div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; color: #fff; font-size: 1.1rem; line-height: 1.6;">{content[lang]}</div>', unsafe_allow_html=True)
 
-    if lang == "en":
-        st.markdown(BAHRAIN_HISTORY_EN)
-    elif lang == "ar":
-        st.markdown(f"<div dir='rtl' style='text-align: right'>{BAHRAIN_HISTORY_AR}</div>", unsafe_allow_html=True)
-    else: # French
-        st.markdown(BAHRAIN_HISTORY_FR)
 
 # ----------------------------
-# Dashboard Tab (main app content)
+# Dashboard Tab
 # ----------------------------
 with top_tabs[2]:
-    # ---------- INTRO SECTION ----------
-    intro_html = {
-        "en": """
-        <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem;
-        border-radius: 15px; max-width: 900px; margin: 1.5rem auto; color: #111;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma,
-        Geneva, Verdana, sans-serif;">
-        <h1 style="color: #023e8a; font-weight: 700;">💧 WaterGuard Prototype</h1>
-        <p style="font-size: 1.05rem; line-height: 1.5;">
-        WaterGuard is a smart AI-powered water monitoring prototype built for a residential home in Saar. It tracks daily water usage, detects abnormal spikes, and provides real-time alerts to help homeowners save water and reduce costs. By analyzing consumption habits, the system can identify subtle anomalies that might indicate a hidden leak or a faulty appliance. The intuitive dashboard offers a comprehensive view of your usage, allowing you to make informed decisions and adopt more sustainable behaviors. WaterGuard is more than just a monitor; it is a partner in responsible water management, contributing to both your budget and the preservation of this vital resource.
-        </p>
-        </div>
-        """,
-        "ar": """
-        <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem;
-        border-radius: 15px; max-width: 900px; margin: 1.5rem auto; color: #111; box-shadow:
-        0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma, Geneva, Verdana,
-        sans-serif; direction: rtl; text-align: right;">
-        <h1 style="color: #023e8a; font-weight: 700;">💧نموذج ووتر جارد</h1>
-        <p style="font-size: 1.05rem; line-height: 1.5;">
-        ووتر جارد هو نموذج ذكي لمراقبة استهلاك المياه في منزل سكني بمنطقة سار. يستخدم الذكاء الاصطناعي لتحليل البيانات وكشف أي استهلاك غير طبيعي، مما يساعد على تقليل الهدر وخفض الفواتير. من خلال تحليل عادات الاستهلاك، يمكن للنظام تحديد الأنماط الشاذة الدقيقة التي قد تشير إلى تسرب مخفي أو جهاز معطل. توفر لوحة التحكم سهلة الاستخدام نظرة عامة شاملة على استهلاكك، مما يتيح لك اتخاذ قرارات مستنيرة واتباع سلوكيات أكثر استدامة. ووتر جارد هو أكثر من مجرد جهاز مراقبة؛ إنه شريك في إدارة المياه بمسؤولية، مما يساهم في ميزانيتك وفي الحفاظ على هذا المورد الحيوي.
-        </p>
-        </div>
-        """,
-        "fr": """
-        <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem;
-        border-radius: 15px; max-width: 900px; margin: 1.5rem auto; color: #111;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma,
-        Geneva, Verdana, sans-serif;">
-        <h1 style="color: #023e8a; font-weight: 700;">💧 Prototype WaterGuard</h1>
-        <p style="font-size: 1.05rem; line-height: 1.5;">
-        WaterGuard est un prototype de surveillance de l'eau intelligent alimenté par l'IA,
-        conçu pour une maison résidentielle à Saar. Il suit la consommation quotidienne
-        d'eau, détecte les pics anormaux et fournit des alertes en temps réel pour aider
-        les propriétaires à économiser l'eau et à réduire les coûts. En analysant les habitudes de consommation, le système peut identifier des anomalies subtiles qui pourraient indiquer une fuite cachée ou un appareil défectueux. Le tableau de bord intuitif offre une vue d'ensemble de votre consommation, vous permettant de prendre des décisions éclairées et d'adopter des comportements plus durables. WaterGuard est plus qu'un simple moniteur ; c'est un partenaire dans la gestion responsable de l'eau, contribuant à la fois à votre budget et à la préservation de cette ressource vitale.
-        </p>
-        </div>
-        """
-    }
-    st.markdown(intro_html[lang], unsafe_allow_html=True)
+    dashboard_header = {
+        "en": "📊 Your WaterGuard Dashboard",
+        "ar": "📊 لوحة تحكم ووتر جارد الخاصة بك",
+        "fr": "📊 Votre Tableau de bord WaterGuard"
+    }
+    st.header(dashboard_header[lang])
+    
+    # Summary Cards
+    col1, col2, col3 = st.columns(3)
+    
+    daily_total = df['usage_liters'].iloc[-24:].sum()
+    monthly_total = df['usage_liters'].iloc[-30*24:].sum()
+    total_anomalies = (df['anomaly'] == 'Anomaly').sum()
 
-    # ---------- SIDEBAR SUMMARY ----------
-    sidebar_texts = {
-        "en": "📅 Select a day to view usage",
-        "ar": "📅 اختر اليوم لعرض الاستهلاك",
-        "fr": "📅 Sélectionnez un jour pour voir la consommation"
-    }
-    selected_day = st.sidebar.date_input(
-        sidebar_texts[lang],
-        value=df['date'].max(),
-        min_value=df['date'].min(),
-        max_value=df['date'].max()
-    )
-    df_day = df[df['date'] == selected_day]
-    day_usage = df_day['usage_liters'].sum()
-    daily_quota = 1500
-    remaining = max(daily_quota - day_usage, 0)
-    usage_ratio = day_usage / daily_quota
-    cost_per_liter = 0.000193
-    daily_cost = day_usage * cost_per_liter
+    with col1:
+        card_daily_title = {"en": "Today's Usage", "ar": "استهلاك اليوم", "fr": "Consommation du jour"}
+        st.metric(card_daily_title[lang], f"{daily_total:.2f} L")
+    
+    with col2:
+        card_monthly_title = {"en": "Monthly Usage", "ar": "الاستهلاك الشهري", "fr": "Consommation mensuelle"}
+        st.metric(card_monthly_title[lang], f"{monthly_total:.2f} L")
 
-    sidebar_summary = {
-        "en": f"""
-        ## 💧 Daily Water Usage Summary
-        **Date:** {selected_day}
-        **Used:** {day_usage:,.0f} liters
-        **Remaining:** {remaining:,.0f} liters
-        **Quota:** {daily_quota} liters
-        **Estimated Cost:** BHD {daily_cost:.3f}
-        """,
-        "ar": f"""
-        ## 💧 ملخص استهلاك المياه اليومي
-        **التاريخ:** {selected_day}
-        **المستهلك:** {day_usage:,.0f} لتر
-        **المتبقي:** {remaining:,.0f} لتر
-        **الحصة اليومية:** {daily_quota} لتر
-        **التكلفة التقديرية:** {daily_cost:.3f} دينار بحريني
-        """,
-        "fr": f"""
-        ## 💧 Résumé de la consommation d'eau quotidienne
-        **Date :** {selected_day}
-        **Utilisé :** {day_usage:,.0f} litres
-        **Restant :** {remaining:,.0f} litres
-        **Quota :** {daily_quota} litres
-        **Coût estimé :** BHD {daily_cost:.3f}
-        """
-    }
-    st.sidebar.markdown(sidebar_summary[lang])
+    with col3:
+        card_alerts_title = {"en": "Total Leak Alerts", "ar": "إجمالي تنبيهات التسرب", "fr": "Total des alertes de fuite"}
+        st.metric(card_alerts_title[lang], f"{total_anomalies} alerts")
 
-    st.sidebar.progress(min(usage_ratio, 1.0))
+    # Anomaly Alert Section
+    recent_anomalies = df[df['anomaly'] == 'Anomaly'].iloc[-1:]
+    if not recent_anomalies.empty:
+        anom_time = recent_anomalies.iloc[0]['timestamp']
+        anom_severity = recent_anomalies.iloc[0]['severity']
+        alert_text = {
+            "en": f"🚨 **High Risk Alert:** An unusual water usage spike was detected at {anom_time.strftime('%I:%M %p, %b %d')}. Severity: {anom_severity}",
+            "ar": f"🚨 **تنبيه عالي الخطورة:** تم رصد ارتفاع غير عادي في استهلاك المياه في {anom_time.strftime('%I:%M %p, %b %d')}. الشدة: {anom_severity}",
+            "fr": f"🚨 **Alerte Risque Élevé:** Un pic de consommation d'eau inhabituel a été détecté à {anom_time.strftime('%I:%M %p, %b %d')}. Gravité : {anom_severity}"
+        }
+        st.markdown(f'<div class="anomaly-alert">{alert_text[lang]}</div>', unsafe_allow_html=True)
+        
+    st.markdown("---")
+    
+    # ----------------------------
+    # New Predictive AI Visualization
+    # ----------------------------
+    predictive_header = {
+        "en": "🧠 Predictive Leak Analysis",
+        "ar": "🧠 تحليل التنبؤ بالتسرب",
+        "fr": "🧠 Analyse prédictive des fuites"
+    }
+    predictive_caption = {
+        "en": "The AI model has learned your normal water usage patterns from the past 30 days and predicts what your usage will be. Any sharp deviations indicate a potential leak.",
+        "ar": "لقد تعلم نموذج الذكاء الاصطناعي أنماط استهلاكك الطبيعية للمياه من آخر 30 يومًا ويتنبأ بما سيكون عليه استهلاكك. أي انحرافات حادة تشير إلى تسرب محتمل.",
+        "fr": "Le modèle d'IA a appris vos habitudes de consommation d'eau normales des 30 derniers jours et prédit quelle sera votre consommation. Toute déviation brusque indique une fuite potentielle."
+    }
+    
+    st.subheader(predictive_header[lang])
+    st.write(predictive_caption[lang])
+    
+    # Get the data for prediction
+    training_data, forecast_df = run_prediction(df)
+    
+    # Combine training data and forecast for plotting
+    plot_data = pd.concat([training_data.set_index('timestamp')['usage_liters'], forecast_df['predicted_usage']])
+    plot_data = plot_data.reset_index()
+    plot_data.columns = ['timestamp', 'usage_liters']
+    
+    # Create Plotly figure
+    fig = go.Figure()
 
-    # Alerts
-    high_usage_threshold = daily_quota * 0.9
-    if day_usage > high_usage_threshold:
-        alert_message = {
-            "en": "🚨 High water consumption detected today!",
-            "ar": "🚨 تم الكشف عن استهلاك مياه مرتفع اليوم!",
-            "fr": "🚨 Consommation d'eau élevée détectée aujourd'hui !"
-        }
-        st.sidebar.warning(alert_message[lang])
+    # Add Actual Usage trace
+    fig.add_trace(go.Scatter(
+        x=training_data['timestamp'], 
+        y=training_data['usage_liters'],
+        mode='lines', 
+        name='Actual Usage',
+        line=dict(color='#0275d8')
+    ))
 
-    # Anomalies table
-    anomaly_heading = {
-        "en": "## 🔍 Detected Anomalies (Possible Leaks or Spikes)",
-        "ar": "## 🔍 الأنماط الشاذة المكتشفة (تسريبات أو زيادات محتملة)",
-        "fr": "## 🔍 Anomalies détectées (fuites ou pics possibles)"
-    }
-    st.markdown(anomaly_heading[lang])
+    # Add Forecasted Usage trace
+    fig.add_trace(go.Scatter(
+        x=forecast_df.index,
+        y=forecast_df['predicted_usage'],
+        mode='lines',
+        name='Predicted Usage',
+        line=dict(color='#28a745', dash='dash')
+    ))
 
-    expander_label = {
-        "en": "Show Anomalies",
-        "ar": "إظهار الأنماط الشاذة",
-        "fr": "Afficher les anomalies"
-    }
-    with st.expander(expander_label[lang]):
-        df_anomalies = df[df['anomaly'] == 'Anomaly']
-        anomaly_display = df_anomalies[['timestamp', 'usage_liters', 'severity']].copy()
-        anomaly_display['usage_liters'] = anomaly_display['usage_liters'].map(lambda x: f"{x:.2f}")
-        anomaly_display['severity'] = anomaly_display['severity'].astype(str)
-        st.dataframe(anomaly_display)
-        csv_anomaly = anomaly_display.to_csv(index=False)
-        download_button_label = {
-            "en": "Download Anomalies CSV",
-            "ar": "تحميل الأنماط الشاذة CSV",
-            "fr": "Télécharger les anomalies CSV"
-        }
-        st.download_button(
-            label=download_button_label[lang],
-            data=csv_anomaly,
-            file_name='waterguard_anomalies.csv',
-            mime='text/csv'
-        )
+    # Mark anomalies as red dots
+    anomaly_df = df[df['anomaly'] == 'Anomaly'].iloc[-30*24:]
+    if not anomaly_df.empty:
+        fig.add_trace(go.Scatter(
+            x=anomaly_df['timestamp'],
+            y=anomaly_df['usage_liters'],
+            mode='markers',
+            name='Detected Leak',
+            marker=dict(color='red', size=8)
+        ))
 
-    # Usage visualization - hourly for selected day
-    df['time_str'] = df['timestamp'].dt.strftime('%H:%M')
-    df_day_hourly = df[df['date'] == selected_day]
+    # Update layout for a professional look
+    fig.update_layout(
+        title=dict(text='Water Usage: Past 30 Days & Next 7-Day Forecast', x=0.5, font=dict(color='white')),
+        xaxis_title='Date and Time',
+        yaxis_title='Water Usage (Liters)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white'),
+        hovermode='x unified',
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
 
-    hourly_heading = {
-        "en": f"## 📊 Hourly Water Usage for {selected_day}",
-        "ar": f"## 📊 استهلاك المياه الساعي ليوم {selected_day}",
-        "fr": f"## 📊 Consommation d'eau horaire pour le {selected_day}"
-    }
-    st.markdown(hourly_heading[lang])
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("---")
 
-    fig1, ax1 = plt.subplots(figsize=(14, 6))
-    sns.lineplot(data=df_day_hourly, x='time_str', y='usage_liters', ax=ax1, label='Usage' if lang in ['en', 'fr'] else 'الاستهلاك')
-    sns.scatterplot(data=df_day_hourly[df_day_hourly['anomaly'] == 'Anomaly'],
-                    x='time_str', y='usage_liters',
-                    color='red', marker='X', s=60, label='Anomaly' if lang in ['en', 'fr'] else 'خلل', ax=ax1)
-    
-    xlabel_text = {
-        "en": "Time (HH:MM)",
-        "ar": "الوقت (ساعة:دقيقة)",
-        "fr": "Heure (HH:MM)"
-    }
-    ylabel_text = {
-        "en": "Liters",
-        "ar": "لتر",
-        "fr": "Litres"
-    }
-    title_text_plot1 = {
-        "en": f"Hourly Water Usage for {selected_day}",
-        "ar": f"استهلاك المياه الساعي ليوم {selected_day}",
-        "fr": f"Consommation d'eau horaire pour le {selected_day}"
-    }
+    # Existing charts for daily and weekly usage
+    with st.expander("Show Detailed Usage Graphs"):
+        # Daily Usage Plot
+        daily_df = df.groupby('date')['usage_liters'].sum().reset_index()
+        daily_df['date'] = pd.to_datetime(daily_df['date'])
+        fig_daily = px.bar(daily_df, x='date', y='usage_liters',
+                            title="Daily Water Consumption",
+                            labels={'date': 'Date', 'usage_liters': 'Usage (Liters)'})
+        st.plotly_chart(fig_daily, use_container_width=True)
 
-    ax1.set_xlabel(xlabel_text[lang])
-    ax1.set_ylabel(ylabel_text[lang])
-    ax1.set_title(title_text_plot1[lang])
-    ax1.tick_params(axis='x', rotation=45)
-    ax1.legend()
-    st.pyplot(fig1)
-
-    # Daily data for last year
-    df_daily = df.set_index('timestamp').resample('D')['usage_liters'].sum().reset_index()
-    daily_heading = {
-        "en": "## 📈 Daily Water Usage (Past Year)",
-        "ar": "## 📈 استهلاك المياه اليومي (السنة الماضية)",
-        "fr": "## 📈 Consommation d'eau quotidienne (Année passée)"
-    }
-    st.markdown(daily_heading[lang])
-
-    fig2, ax2 = plt.subplots(figsize=(14, 5))
-    sns.lineplot(data=df_daily, x='timestamp', y='usage_liters', ax=ax2)
-
-    xlabel_text2 = {
-        "en": "Date",
-        "ar": "التاريخ",
-        "fr": "Date"
-    }
-    ylabel_text2 = {
-        "en": "Liters",
-        "ar": "لتر",
-        "fr": "Litres"
-    }
-    title_text_plot2 = {
-        "en": "Daily Water Usage",
-        "ar": "استهلاك المياه اليومي",
-        "fr": "Consommation d'eau quotidienne"
-    }
-
-    ax2.set_xlabel(xlabel_text2[lang])
-    ax2.set_ylabel(ylabel_text2[lang])
-    ax2.set_title(title_text_plot2[lang])
-    ax2.tick_params(axis='x', rotation=45)
-    st.pyplot(fig2)
-
-    # Monthly data
-    df_monthly = df.set_index('timestamp').resample('M')['usage_liters'].sum().reset_index()
-    monthly_heading = {
-        "en": "## 📉 Monthly Water Usage (Past Year)",
-        "ar": "## 📉 استهلاك المياه الشهري (السنة الماضية)",
-        "fr": "## 📉 Consommation d'eau mensuelle (Année passée)"
-    }
-    st.markdown(monthly_heading[lang])
-
-    fig3, ax3 = plt.subplots(figsize=(14, 5))
-    sns.lineplot(data=df_monthly, x='timestamp', y='usage_liters', ax=ax3)
-
-    xlabel_text3 = {
-        "en": "Month",
-        "ar": "الشهر",
-        "fr": "Mois"
-    }
-    ylabel_text3 = {
-        "en": "Liters",
-        "ar": "لتر",
-        "fr": "Litres"
-    }
-    title_text_plot3 = {
-        "en": "Monthly Water Usage",
-        "ar": "استهلاك المياه الشهري",
-        "fr": "Consommation d'eau mensuelle"
-    }
-    ax3.set_xlabel(xlabel_text3[lang])
-    ax3.set_ylabel(ylabel_text3[lang])
-    ax3.set_title(title_text_plot3[lang])
-    ax3.tick_params(axis='x', rotation=45)
-    st.pyplot(fig3)
-
-    # Daily report download
-    download_report_heading = {
-        "en": "## 📥 Download Daily Usage Report",
-        "ar": "## 📥 تحميل تقرير الاستهلاك اليومي",
-        "fr": "## 📥 Télécharger le rapport de consommation quotidienne"
-    }
-    st.markdown(download_report_heading[lang])
-
-    daily_report_csv = df_day.to_csv(index=False)
-    download_report_button_label = {
-        "en": "Download Daily Report CSV",
-        "ar": "تحميل تقرير الاستهلاك اليومي CSV",
-        "fr": "Télécharger le rapport quotidien CSV"
-    }
-    st.download_button(
-        label=download_report_button_label[lang],
-        data=daily_report_csv,
-        file_name=f'daily_usage_{selected_day}.csv',
-        mime='text/csv'
-    )
-
-    # Real-time notification if anomaly present today
-    if "Anomaly" in df_day["anomaly"].values:
-        anomaly_warning_text = {
-            "en": "🚨 High water consumption anomaly detected today!",
-            "ar": "🚨 تم الكشف عن خلل استهلاك المياه اليوم!",
-            "fr": "🚨 Une anomalie de consommation d'eau élevée a été détectée aujourd'hui !"
-        }
-        st.markdown(f'<div class="anomaly-alert">{anomaly_warning_text[lang]}</div>', unsafe_allow_html=True)
-
-    # Water conservation tips
-    tips_heading = {
-        "en": "### 💡 Water Conservation Tips",
-        "ar": "### 💡 نصائح للحفاظ على المياه",
-        "fr": "### 💡 Conseils pour la conservation de l'eau"
-    }
-    st.markdown(tips_heading[lang])
-    tips_content = {
-        "en": """
-        - Fix leaks promptly to save water and money.
-        - Use water-efficient appliances and fixtures.
-        - Collect rainwater for irrigation.
-        - Turn off taps when not in use.
-        - Monitor your usage regularly to detect changes.
-        """,
-        "ar": """
-        - أصلح التسريبات بسرعة لتوفير المياه والمال.
-        - استخدم الأجهزة والتركيبات الموفرة للمياه.
-        - اجمع مياه الأمطار للري.
-        - أغلق الصنابير عند عدم الاستخدام.
-        - راقب استهلاكك للكشف عن التغيرات.
-        """,
-        "fr": """
-        - Réparez rapidement les fuites pour économiser de l'eau et de l'argent.
-        - Utilisez des appareils et des installations économes en eau.
-        - Récupérez l'eau de pluie pour l'irrigation.
-        - Fermez les robinets lorsqu'ils ne sont pas utilisés.
-        - Surveillez régulièrement votre consommation pour détecter les changements.
-        """
-    }
-    st.markdown(tips_content[lang])
-
-    # Testimonials section
-    st.markdown("---")
-    testimonials_heading = {
-        "en": "### What Our Users Say",
-        "ar": "### ماذا يقول مستخدمونا",
-        "fr": "### Ce que disent nos utilisateurs"
-    }
-    st.markdown(testimonials_heading[lang])
-
-    cols = st.columns(2)
-    for i, testimonial in enumerate(testimonial_data[lang]):
-        with cols[i % 2]:
-            profile_emoji, profile_name, profile_email = profiles[i]
-            st.markdown(f"""
-            <div class="testimonial-card">
-                <p>"{testimonial}"</p>
-                <div class="testimonial-profile">
-                    <span class="emoji">{profile_emoji}</span>
-                    <div>
-                        <strong>{profile_name}</strong>
-                        <p style="font-size: 0.8em; margin: 0; color: #555;">{profile_email}</p>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        # Hourly Usage Plot with Anomalies
+        fig_hourly = px.line(df, x='timestamp', y='usage_liters',
+                              title="Hourly Water Usage with Anomaly Detection",
+                              labels={'timestamp': 'Time', 'usage_liters': 'Usage (Liters)'},
+                              color='anomaly',
+                              color_discrete_map={'Normal': '#0275d8', 'Anomaly': 'red'})
+        fig_hourly.update_traces(marker=dict(size=4))
+        st.plotly_chart(fig_hourly, use_container_width=True)
 
 
-    # FAQ
-    st.markdown("---")
-    faq_heading_html = {
-        "en": """
-        <div style="background: rgba(255, 255, 255, 0.9); padding: 1rem 1.5rem;
-        border-radius: 12px; margin-top: 1rem; color: #111;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-        <h2 style="color: #023e8a;">💧 WaterGuard FAQ</h2>
-        </div>
-        """,
-        "ar": """
-        <div style="background: rgba(255, 255, 255, 0.9); padding: 1rem 1.5rem;
-        border-radius: 12px; margin-top: 1rem; color: #111;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05); direction: rtl; text-align: right;">
-        <h2 style="color: #023e8a;">💧 الأسئلة المتكررة - ووتر جارد</h2>
-        </div>
-        """,
-        "fr": """
-        <div style="background: rgba(255, 255, 255, 0.9); padding: 1rem 1.5rem;
-        border-radius: 12px; margin-top: 1rem; color: #111;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-        <h2 style="color: #023e8a;">💧 FAQ WaterGuard</h2>
-        </div>
-        """
-    }
-
-    faqs = {
-        "en": {
-            "How can I detect a water leak early?": "Use WaterGuard's anomaly detection alerts to spot unusual spikes.",
-            "What should I do if an anomaly is detected?": "Check for leaks or unusual water usage immediately.",
-            "Can WaterGuard monitor multiple locations?": "Yes, it supports tracking usage across various branches or sites.",
-            "How accurate is the anomaly detection?": "The system uses AI to detect 95% of irregular water usage patterns.",
-            "Is WaterGuard suitable for factories with large consumption?": "Yes, it manages high-volume water use and alerts for excess.",
-            "How often is water usage data updated?": "Data is updated hourly for precise monitoring and alerts.",
-            "Can I download daily usage reports?": "Yes, downloadable CSV reports are available for any selected day.",
-            "What cost savings can I expect?": "Early leak detection and usage optimization significantly reduce bills.",
-            "Does WaterGuard support multiple languages?": "Currently supports English, Arabic, and French interfaces.",
-            "Who do I contact for technical support?": "Contact support@waterguard.bh for all maintenance and help queries."
-        },
-        "ar": {
-            "كيف يمكنني اكتشاف تسريب المياه مبكرًا؟": "استخدم تنبيهات كشف الخلل من ووتر جارد لرصد الزيادات غير المعتادة.",
-            "ماذا أفعل إذا تم اكتشاف خلل؟": "تحقق فورًا من وجود تسريبات أو استهلاك غير طبيعي للمياه.",
-            "هل يمكن لووتر جارد مراقبة مواقع متعددة؟": "نعم، يدعم تتبع الاستهلاك عبر فروع أو مواقع مختلفة.",
-            "ما مدى دقة كشف الخلل؟": "يستخدم النظام الذكاء الاصطناعي لاكتشاف 95٪ من أنماط الاستهلاك غير الطبيعية.",
-            "هل ووتر جارد مناسب للمصانع ذات الاستهلاك الكبير؟": "نعم، يدير استهلاك المياه العالي ويرسل تنبيهات عند الزيادة.",
-            "كم مرة يتم تحديث بيانات استهلاك المياه؟": "يتم تحديث البيانات كل ساعة لمراقبة دقيقة وتنبيهات فورية.",
-            "هل يمكنني تحميل تقارير الاستهلاك اليومية؟": "نعم، تتوفر تقارير CSV قابلة للتحميل لأي يوم محدد.",
-            "ما مقدار التوفير المتوقع في التكاليف؟": "الكشف المبكر عن التسريبات وتحسين الاستخدام يقلل الفواتير بشكل كبير.",
-            "هل يدعم ووتر جارد لغات متعددة؟": "يدعم حاليًا واجهات باللغات الإنجليزية والعربية والفرنسية.",
-            "من أتصل به للدعم الفني؟": "تواصل مع support@waterguard.bh لجميع استفسارات الصيانة والمساعدة."
-        },
-        "fr": {
-            "Comment puis-je détecter une fuite d'eau tôt ?": "Utilisez les alertes de détection d'anomalies de WaterGuard pour repérer les pics inhabituels.",
-            "Que dois-je faire si une anomalie est détectée ?": "Vérifiez immédiatement les fuites ou la consommation d'eau inhabituelle.",
-            "WaterGuard peut-il surveiller plusieurs emplacements ?": "Oui, il prend en charge le suivi de la consommation sur plusieurs succursales ou sites.",
-            "Quelle est la précision de la détection des anomalies ?": "Le système utilise l'IA pour détecter 95 % des modèles de consommation d'eau irréguliers.",
-            "WaterGuard est-il adapté aux usines à forte consommation ?": "Oui, il gère la consommation d'eau à haut volume et alerte en cas d'excès.",
-            "À quelle fréquence les données de consommation d'eau sont-elles mises à jour ?": "Les données sont mises à jour toutes les heures pour une surveillance et des alertes précises.",
-            "Puis-je télécharger des rapports de consommation quotidiens ?": "Oui, des rapports CSV téléchargeables sont disponibles pour n'importe quel jour sélectionné.",
-            "À quelles économies de coûts puis-je m'attendre ?": "La détection précoce des fuites et l'optimisation de la consommation réduisent considérablement les factures.",
-            "WaterGuard prend-il en charge plusieurs langues ?": "Actuellement, il prend en charge les interfaces en anglais, arabe et français.",
-            "Qui dois-je contacter pour le support technique ?": "Contactez support@waterguard.bh pour toutes les questions de maintenance et d'assistance."
-        }
-    }
-
-    st.markdown(faq_heading_html[lang], unsafe_allow_html=True)
-
-    for q, a in faqs[lang].items():
-        st.markdown(f"""
-        <div style="background: rgba(255, 255, 255, 0.85);
-        padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 0.8rem;">
-        <strong style="color: #0077b6;">{q}</strong>
-        <p class="faq-answer" style="margin-top: 0.4rem;">{a}</p>
-        </div>
-        """, unsafe_allow_html=True)
+    # Testimonials
+    st.markdown("---")
+    testimonials_header = {
+        "en": "What Our Users Say",
+        "ar": "ماذا يقول مستخدمونا",
+        "fr": "Ce que disent nos utilisateurs"
+    }
+    st.subheader(testimonials_header[lang])
+    
+    testimonial_cols = st.columns(3)
+    displayed_testimonials = random.sample(testimonial_data[lang], 3)
+    displayed_profiles = random.sample(profiles, 3)
+    
+    for i, col in enumerate(testimonial_cols):
+        with col:
+            profile = displayed_profiles[i]
+            emoji, name, email = profile
+            
+            st.markdown(f"""
+            <div class="testimonial-card">
+                <p>{displayed_testimonials[i]}</p>
+                <div class="testimonial-profile">
+                    <span class="emoji">{emoji}</span>
+                    <div>
+                        <strong>{name}</strong>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
