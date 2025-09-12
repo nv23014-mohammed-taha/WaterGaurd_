@@ -669,7 +669,7 @@ if page == "Education":
     # Language selector
     lang = st.selectbox("🌍 Choose Language:", ["English", "العربية", "Français"])
 
-   import streamlit as st
+import streamlit as st
 
 # Initialize session state
 if "module" not in st.session_state:
