@@ -29,6 +29,52 @@ import json
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
+# Custom CSS for button styling and other visual enhancements
+st.markdown("""
+<style>
+.stApp {
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.stButton>button {
+    background-color: black;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+.stButton>button:hover {
+    background-color: #333;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+.testimonial-card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: #000;
+}
+.testimonial-profile {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+.testimonial-profile .emoji {
+    font-size: 2rem;
+    margin-right: 10px;
+}
+.faq-answer {
+    color: #000;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # ----------------------------
 # Session state initial setup
 # ----------------------------
@@ -386,6 +432,60 @@ restent parmi les mesures les plus rentables et les plus immédiates pour assure
 résilience de Bahreïn en matière d'eau.
 """.strip()
 
+# Testimonial data
+testimonial_data = {
+    "en": [
+        "💡 WaterGuard helped me discover a hidden leak — saved me BHD 12 this month!",
+        "✅ The alerts are super accurate. I got notified before a serious leak became worse.",
+        "📈 I love the usage graphs. Makes me aware of our daily water behavior.",
+        "💧 We found our garden sprinkler system was overwatering — now fixed!",
+        "🏡 Great for homes with large families — helps avoid high bills.",
+        "📊 Downloaded a report and shared it with my landlord. Very professional!",
+        "📱 The dashboard is clean and easy to use. Even my kids get it!",
+        "🔔 Real-time alerts helped me stop water waste while traveling.",
+        "🧠 I never knew how much the kitchen used until WaterGuard showed me.",
+        "🌱 We’re now more eco-conscious thanks to WaterGuard’s tips and insights."
+    ],
+    "ar": [
+        "💡 ووتر جارد ساعدني في اكتشاف تسرب مخفي — ووفّر لي 12 دينارًا هذا الشهر!",
+        "✅ التنبيهات دقيقة للغاية. تم إخطاري قبل أن يتفاقم التسرب الخطير.",
+        "📈 أحب الرسوم البيانية للاستهلاك. تجعلني على دراية بسلوكنا اليومي في استخدام المياه.",
+        "💧 وجدنا أن نظام رشاش الحديقة كان يروي أكثر من اللازم — وتم إصلاحه الآن!",
+        "🏡 رائع للمنازل ذات العائلات الكبيرة — يساعد على تجنب الفواتير المرتفعة.",
+        "📊 قمت بتحميل تقرير وشاركته مع مالك العقار. احترافي جداً!",
+        "📱 لوحة التحكم نظيفة وسهلة الاستخدام. حتى أطفالي يفهمونها!",
+        "🔔 ساعدتني التنبيهات الفورية على إيقاف هدر المياه أثناء السفر.",
+        "🧠 لم أكن أعلم أبدًا كمية المياه التي يستهلكها المطبخ حتى أظهر لي ووتر جارد.",
+        "🌱 نحن الآن أكثر وعيًا بيئيًا بفضل نصائح ورؤى ووتر جارد."
+    ],
+    "fr": [
+        "💡 WaterGuard m'a aidé à découvrir une fuite cachée — j'ai économisé 12 BHD ce mois-ci !",
+        "✅ Les alertes sont très précises. J'ai été prévenu avant qu'une fuite sérieuse ne s'aggrave.",
+        "📈 J'adore les graphiques de consommation. Cela me rend conscient de notre comportement quotidien vis-à-vis de l'eau.",
+        "💧 Nous avons découvert que notre système d'arrosage de jardin arrosait trop — c'est maintenant réparé !",
+        "🏡 Idéal pour les familles nombreuses — cela aide à éviter les factures élevées.",
+        "📊 J'ai téléchargé un rapport et je l'ai partagé avec mon propriétaire. Très professionnel !",
+        "📱 Le tableau de bord est propre et facile à utiliser. Même mes enfants le comprennent !",
+        "🔔 Les alertes en temps réel m'ont aidé à arrêter le gaspillage d'eau pendant un voyage.",
+        "🧠 Je n'ai jamais su à quel point la cuisine consommait jusqu'à ce que WaterGuard me le montre.",
+        "🌱 Nous sommes maintenant plus éco-conscients grâce aux conseils et aux informations de WaterGuard."
+    ]
+}
+
+profiles = [
+    ("👨‍💼", "Khalid", "khalid_madan76@outlook.com"),
+    ("👨‍💼", "Yousef", "yousef_albahbhani76@gmail.com"),
+    ("👨‍💼", "Omar", "omar_abdullah36555@yahoo.com"),
+    ("👨‍💼", "Adel", "adel_doseri55@yahoo.com"),
+    ("👨‍💼", "Hassan", "hassan_al_anazi82@gmail.com"),
+    ("👩‍💼", "Noor", "noor_01_altwash98@yahoo.com"),
+    ("👩‍💼", "Mariam", "mariam_11_alekrawi@yahoo.com"),
+    ("👩‍💼", "Rana", "rana_al_shammri93@outlook.com"),
+    ("👩‍💼", "Zahra", "zahra_almtari31@outlook.com"),
+    ("👩‍💼", "Aisha", "aisha_buqais2306@gmail.com"),
+]
+
+
 # ----------------------------
 # Core app content (existing) - Data simulation + analysis
 # ----------------------------
@@ -596,9 +696,9 @@ with top_tabs[0]:
     if st.session_state.course_progress >= len(COURSE):
         st.balloons()
         course_complete_text = {
-            "en": "Course complete!",
-            "ar": "تم إكمال الدورة!",
-            "fr": "Cours terminé !"
+            "en": "Congratulations! You have successfully completed the WaterGuard Course.",
+            "ar": "تهانينا! لقد أكملت دورة ووتر جارد بنجاح.",
+            "fr": "Félicitations ! Vous avez terminé avec succès le cours WaterGuard."
         }
         st.success(course_complete_text[lang])
 
@@ -655,9 +755,7 @@ with top_tabs[2]:
         Geneva, Verdana, sans-serif;">
         <h1 style="color: #023e8a; font-weight: 700;">💧 WaterGuard Prototype</h1>
         <p style="font-size: 1.05rem; line-height: 1.5;">
-        WaterGuard is a smart AI-powered water monitoring prototype built for a
-        residential home in Saar. It tracks daily water usage, detects abnormal spikes,
-        and provides real-time alerts to help homeowners save water and reduce costs.
+        WaterGuard is a smart AI-powered water monitoring prototype built for a residential home in Saar. It tracks daily water usage, detects abnormal spikes, and provides real-time alerts to help homeowners save water and reduce costs. By analyzing consumption habits, the system can identify subtle anomalies that might indicate a hidden leak or a faulty appliance. The intuitive dashboard offers a comprehensive view of your usage, allowing you to make informed decisions and adopt more sustainable behaviors. WaterGuard is more than just a monitor; it is a partner in responsible water management, contributing to both your budget and the preservation of this vital resource.
         </p>
         </div>
         """,
@@ -668,7 +766,7 @@ with top_tabs[2]:
         sans-serif; direction: rtl; text-align: right;">
         <h1 style="color: #023e8a; font-weight: 700;">💧نموذج ووتر جارد</h1>
         <p style="font-size: 1.05rem; line-height: 1.5;">
-        ووتر جارد هو نموذج ذكي لمراقبة استهلاك المياه في منزل سكني بمنطقة سار. يستخدم الذكاء الاصطناعي لتحليل البيانات وكشف أي استهلاك غير طبيعي، مما يساعد على تقليل الهدر وخفض الفواتير.
+        ووتر جارد هو نموذج ذكي لمراقبة استهلاك المياه في منزل سكني بمنطقة سار. يستخدم الذكاء الاصطناعي لتحليل البيانات وكشف أي استهلاك غير طبيعي، مما يساعد على تقليل الهدر وخفض الفواتير. من خلال تحليل عادات الاستهلاك، يمكن للنظام تحديد الأنماط الشاذة الدقيقة التي قد تشير إلى تسرب مخفي أو جهاز معطل. توفر لوحة التحكم سهلة الاستخدام نظرة عامة شاملة على استهلاكك، مما يتيح لك اتخاذ قرارات مستنيرة واتباع سلوكيات أكثر استدامة. ووتر جارد هو أكثر من مجرد جهاز مراقبة؛ إنه شريك في إدارة المياه بمسؤولية، مما يساهم في ميزانيتك وفي الحفاظ على هذا المورد الحيوي.
         </p>
         </div>
         """,
@@ -682,7 +780,7 @@ with top_tabs[2]:
         WaterGuard est un prototype de surveillance de l'eau intelligent alimenté par l'IA,
         conçu pour une maison résidentielle à Saar. Il suit la consommation quotidienne
         d'eau, détecte les pics anormaux et fournit des alertes en temps réel pour aider
-        les propriétaires à économiser l'eau et à réduire les coûts.
+        les propriétaires à économiser l'eau et à réduire les coûts. En analysant les habitudes de consommation, le système peut identifier des anomalies subtiles qui pourraient indiquer une fuite cachée ou un appareil défectueux. Le tableau de bord intuitif offre une vue d'ensemble de votre consommation, vous permettant de prendre des décisions éclairées et d'adopter des comportements plus durables. WaterGuard est plus qu'un simple moniteur ; c'est un partenaire dans la gestion responsable de l'eau, contribuant à la fois à votre budget et à la préservation de cette ressource vitale.
         </p>
         </div>
         """
@@ -950,7 +1048,35 @@ with top_tabs[2]:
     }
     st.markdown(tips_content[lang])
 
+    # Testimonials section
+    st.markdown("---")
+    testimonials_heading = {
+        "en": "### What Our Users Say",
+        "ar": "### ماذا يقول مستخدمونا",
+        "fr": "### Ce que disent nos utilisateurs"
+    }
+    st.markdown(testimonials_heading[lang])
+
+    cols = st.columns(2)
+    for i, testimonial in enumerate(testimonial_data[lang]):
+        with cols[i % 2]:
+            profile_emoji, profile_name, profile_email = profiles[i]
+            st.markdown(f"""
+            <div class="testimonial-card">
+                <p>"{testimonial}"</p>
+                <div class="testimonial-profile">
+                    <span class="emoji">{profile_emoji}</span>
+                    <div>
+                        <strong>{profile_name}</strong>
+                        <p style="font-size: 0.8em; margin: 0; color: #555;">{profile_email}</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+
     # FAQ
+    st.markdown("---")
     faq_heading_html = {
         "en": """
         <div style="background: rgba(255, 255, 255, 0.9); padding: 1rem 1.5rem;
@@ -1021,6 +1147,6 @@ with top_tabs[2]:
         <div style="background: rgba(255, 255, 255, 0.85);
         padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 0.8rem;">
         <strong style="color: #0077b6;">{q}</strong>
-        <p style="margin-top: 0.4rem;">{a}</p>
+        <p class="faq-answer" style="margin-top: 0.4rem;">{a}</p>
         </div>
         """, unsafe_allow_html=True)
