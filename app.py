@@ -386,7 +386,8 @@ with top_tabs[0]:
     if st.button("Mark module complete" if lang == "en" else "تحديد الوحدة كمكتملة"):
         st.session_state.course_progress = max(st.session_state.course_progress, module_idx + 1)
         st.success("Module marked complete." if lang == "en" else "تم تحديد الوحدة كمكتملة.")
-        st.experimental_rerun()
+        st.rerun()
+
 
     # Quiz UI for current module
     if module.get("quiz"):
