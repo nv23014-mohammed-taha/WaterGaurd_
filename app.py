@@ -10,13 +10,26 @@ import seaborn as sns
 import random
 import base64
 from streamlit.components.v1 import html
+import plotly.express as px
+import time
 
 sns.set_style("whitegrid")
 st.set_page_config(page_title="WaterGuard", layout="wide")
 
+# Initialize session state for language if not already set
+if "lang" not in st.session_state:
+    st.session_state.lang = "en" # Default to English
+
 # ---------- LANGUAGE TOGGLE ---------- #
-language = st.sidebar.radio("🌐 Language / اللغة", ["English", "العربية"])
-lang = "ar" if language == "العربية" else "en"
+st.sidebar.title("Settings" if st.session_state.lang == "en" else "الإعدادات")
+language_selection = st.sidebar.radio("🌐 Language / اللغة", ["English", "العربية"])
+if language_selection == "العربية":
+    st.session_state.lang = "ar"
+else:
+    st.session_state.lang = "en"
+
+lang = st.session_state.lang # Use the session state for lang
+
 
 # ---------- SCREEN READER BUTTON ---------- #
 def screen_reader_button(lang):
@@ -152,49 +165,6 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-# ... other imports at the top ...
-
-def screen_reader_button(lang):
-    button_html = f"""
-    <button onclick="readPage()" style="
-        background-color:#023e8a; 
-        color:white; 
-        border:none; 
-        padding:10px 20px; 
-        border-radius:10px; 
-        cursor:pointer;
-        font-size:1rem;
-        margin: 1rem 0;">
-        🔊 {'Activate Screen Reader' if lang == 'en' else 'تشغيل قارئ الشاشة'}
-    </button>
-    <script>
-    function readPage() {{
-        const synth = window.speechSynthesis;
-        if (synth.speaking) {{
-            synth.cancel();
-        }}
-        const app = document.querySelector('.stApp');
-        let text = '';
-        if (app) {{
-            const walker = document.createTreeWalker(app, NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            while(node = walker.nextNode()) {{
-                if(node.textContent.trim() !== '') {{
-                    text += node.textContent.trim() + '. ';
-                }}
-            }}
-        }} else {{
-            text = "Content not found.";
-        }}
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = '{ "en-US" if lang == "en" else "ar-SA" }';
-        synth.speak(utterance);
-    }}
-    </script>
-    """
-    html(button_html, height=60)
-
 # ---------- DATA SIMULATION ---------- #
 @st.cache_data
 def simulate_data():
@@ -302,9 +272,9 @@ df_anomalies = df[df['anomaly'] == 'Anomaly']
 if lang == 'en':
     st.markdown("## 🔍 Detected Anomalies (Possible Leaks or Spikes)")
 else:
-    st.markdown("## 🔍 anomalies المكتشفة (تسريبات أو زيادات محتملة)")
+    st.markdown("## 🔍 الأنماط الشاذة المكتشفة (تسريبات أو زيادات محتملة)")
 
-with st.expander(f"{'Show' if lang == 'en' else 'إظهار'} anomalies / anomalies"):
+with st.expander(f"{'Show' if lang == 'en' else 'إظهار'} الأنماط الشاذة / Anomalies"):
     anomaly_display = df_anomalies[['timestamp', 'usage_liters', 'severity']].copy()
     anomaly_display['usage_liters'] = anomaly_display['usage_liters'].map(lambda x: f"{x:.2f}")
     anomaly_display['severity'] = anomaly_display['severity'].astype(str)
@@ -313,7 +283,7 @@ with st.expander(f"{'Show' if lang == 'en' else 'إظهار'} anomalies / anomal
     # Export anomaly data CSV
     csv_anomaly = anomaly_display.to_csv(index=False)
     st.download_button(
-        label="Download Anomalies CSV" if lang == 'en' else "تحميل anomalies CSV",
+        label="Download Anomalies CSV" if lang == 'en' else "تحميل الأنماط الشاذة CSV",
         data=csv_anomaly,
         file_name='waterguard_anomalies.csv',
         mime='text/csv'
@@ -412,8 +382,6 @@ else:
     - أغلق الصنابير عند عدم الاستخدام.
     - راقب استهلاكك للكشف عن التغيرات.
     """)
-
-# --------- FAQ Section (Translucent white block + expanders) --------- #
 
 # ---------- FAQ SECTION AT END ---------- #
 if lang == "en":
@@ -527,9 +495,8 @@ else:
             <p style="margin-top: 0.5rem;">{a}</p>
         </div>
         """, unsafe_allow_html=True)
-       # --------- USER TESTIMONIALS SECTION WITH NAME, EMAIL, EMOJI --------- #
-from random import choice
-
+       
+# --------- USER TESTIMONIALS SECTION WITH NAME, EMAIL, EMOJI --------- #
 testimonial_data = [
     ("💡 WaterGuard helped me discover a hidden leak — saved me BHD 12 this month!"),
     ("✅ The alerts are super accurate. I got notified before a serious leak became worse."),
@@ -585,289 +552,35 @@ if lang == "en":
             <p style="margin-top: 0.5rem;">{testimonial}</p>
         </div>
         """, unsafe_allow_html=True)
-
-import streamlit as st
-import time
-
-# Example alert simulation
-if "leak_detected" not in st.session_state:
-    st.session_state.leak_detected = False
-
-st.title("🚨 WaterGuard Leak Alerts")
-
-if st.button("Simulate Leak Detection"):
-    st.session_state.leak_detected = True
-
-if st.session_state.leak_detected:
-    placeholder = st.empty()
-    for i in range(6):  # Flash 3 times
-        placeholder.error("⚠️ Leak Detected in Kitchen Pipe! Risk Level: HIGH")
-        time.sleep(0.5)
-        placeholder.empty()
-        time.sleep(0.5)
-import plotly.express as px
-import pandas as pd
-
-st.sidebar.title("📊 Navigation")
-page = st.sidebar.radio("Go to:", ["Dashboard", "Reports", "Robot Status"])
-
-if page == "Reports":
-    st.title("📊 Water Usage Reports")
-
-    # Example dataset
-    df = pd.DataFrame({
-        "Day": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        "Usage (L)": [120, 135, 110, 150, 200, 170, 140]
-    })
-
-    # Plotly line chart
-    fig = px.line(df, x="Day", y="Usage (L)", markers=True,
-                  title="Weekly Water Usage")
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Prediction (dummy example)
-    st.success("🤖 AI Prediction: Medium risk of leak in Bathroom pipe within 2 weeks.")
-
-import time
-
-if page == "Robot Status":
-    st.title("🤖 Pipe Inspection & Cleaning")
-
-    progress = st.progress(0)
-    status_text = st.empty()
-
-    for i in range(101):
-        progress.progress(i)
-        if i < 30:
-            status_text.text("🔍 Inspecting pipes...")
-        elif i < 70:
-            status_text.text("🧽 Cleaning buildup...")
-        else:
-            status_text.text("✅ Inspection & cleaning complete.")
-        time.sleep(0.05)
-
-    st.success("Pipes are healthy! ✅ No critical damage detected.")
-
-import streamlit as st
-
-st.sidebar.title("📊 Navigation")
-page = st.sidebar.radio("Go to:", ["Dashboard", "Reports", "Robot Status", "Education"])
-
-if page == "Education":
-    st.title("📘 Water Conservation Education")
-
-    # Intro context
+else: # Arabic testimonials
     st.markdown("""
-    🌍 **Bahrain is one of the driest countries in the world.**  
-    Despite this, it also has one of the **highest water usage rates per resident**.  
-    Conserving water is not only important for the environment but also for the future of Bahrain’s people and economy.  
-    """)
+    <div role="region" aria-label="شهادات المستخدمين" style="
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2rem;
+        border-radius: 15px;
+        max-width: 900px;
+        margin: 3rem auto 2rem auto;
+        color: #111;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        direction: rtl;
+        text-align: right;">
+        <h2 style="color: #023e8a; font-weight: 700;">💬 شهادات المستخدمين</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Audience selection
-    audience = st.radio("👤 Who are you?", ["Adult", "Kid"])
+    testimonial_data_ar = [
+        ("💡 ساعدني ووتر جارد في اكتشاف تسريب مخفي — وفرت 12 دينار بحريني هذا الشهر!"),
+        ("✅ التنبيهات دقيقة للغاية. تم إعلامي قبل أن يصبح التسريب خطيرًا."),
+        ("📈 أحب رسوم البيانية للاستهلاك. تجعلني على دراية بسلوكنا اليومي للمياه."),
+        ("💧 اكتشفنا أن نظام رشاشات الحديقة كان يروي أكثر من اللازم — تم إصلاحه الآن!"),
+        ("🏡 رائع للمنازل التي تضم عائلات كبيرة — يساعد على تجنب الفواتير المرتفعة."),
+        ("📊 حملت تقريرًا وشاركته مع مالك العقار. احترافي للغاية!"),
+        ("📱 لوحة التحكم نظيفة وسهلة الاستخدام. حتى أطفالي يفهمونها!"),
+        ("🔔 التنبيهات في الوقت الفعلي ساعدتني على وقف هدر المياه أثناء السفر."),
+        ("🧠 لم أكن أعرف كم تستهلك المطبخ حتى أظهر لي ووتر جارد."),
+        ("🌱 أصبحنا الآن أكثر وعيًا بيئيًا بفضل نصائح ورؤى ووتر جارد.")
+    ]
 
-    # Language selector
-    lang = st.selectbox("🌍 Choose Language:", ["English", "العربية", "Français"])
-
-import streamlit as st
-
-# Initialize session state
-if "module" not in st.session_state:
-    st.session_state.module = 1
-if "audience" not in st.session_state:
-    st.session_state.audience = "Adult"
-if "video_completed" not in st.session_state:
-    st.session_state.video_completed = False
-
-st.title("📘 WaterGuard Education Course")
-
-# Select path
-audience = st.radio("👤 Who are you?", ["Adult", "Kid"])
-st.session_state.audience = audience
-
-
-
-# Initialize session state
-if "module" not in st.session_state:
-    st.session_state.module = 1
-if "audience" not in st.session_state:
-    st.session_state.audience = "Adult"
-if "video_completed" not in st.session_state:
-    st.session_state.video_completed = False
-if "lang" not in st.session_state:
-    st.session_state.lang = "English"
-
-st.sidebar.title("📊 Navigation")
-page = st.sidebar.radio("Go to:", ["Dashboard", "Reports", "Robot Status", "Education"])
-
-if page == "Education":
-    st.title("📘 WaterGuard Education Course")
-
-    # Intro context
-    st.markdown("""
-    🌍 **Bahrain is one of the driest countries in the world.**  
-    Despite this, it also has one of the **highest water usage rates per resident**.  
-    Conserving water is important for the environment and for the future of Bahrain’s people and economy.  
-    """)
-
-    # Audience selection
-    audience = st.radio("👤 Who are you?", ["Adult", "Kid"])
-    st.session_state.audience = audience
-
-    # Language selector
-    lang = st.selectbox("🌍 Choose Language:", ["English", "العربية", "Français"])
-    st.session_state.lang = lang
-
-    # Adult modules (>300 words each)
-adult_modules = {
-    1: {
-        "title": {
-            "English": "💧 Module 1: The Water Challenge in Bahrain",
-            "العربية": "💧 الوحدة 1: تحدي المياه في البحرين",
-            "Français": "💧 Module 1 : Le défi de l’eau à Bahreïn"
-        },
-        "content": {
-            "English": """
-Bahrain is one of the most water-stressed countries in the world. On average, the country receives less than **80 mm of rainfall annually**, which is not nearly enough to meet the needs of its citizens. For decades, Bahrain has depended on **groundwater aquifers** and **desalination plants** as its main sources of drinking water. Groundwater has been heavily over-extracted, leading to **salinity intrusion from the sea**, making much of it unsuitable for human use. As a result, Bahrain now relies on desalination for **over 90% of its freshwater supply**.
-
-Desalination, while effective, is both **energy-intensive and environmentally costly**. Powering desalination plants requires large amounts of fossil fuels, which contributes to greenhouse gas emissions. Additionally, the process creates **brine waste**, a salty byproduct that is often discharged back into the sea, harming marine ecosystems such as coral reefs, which are already under stress due to warming waters.
-
-Another critical challenge is **consumption behavior**. A typical resident of Bahrain uses **250–300 liters of water per day**, which is nearly double the international average of 150 liters. Much of this consumption is wasted through overuse in household activities, inefficient appliances, and undetected leaks. With a population of around 1.5 million, this means Bahrainis are using hundreds of millions of liters every single day — a pace that is unsustainable given limited natural resources.
-
-Experts project that if current trends continue, Bahrain could face **serious water shortages by 2050**, even with desalination. Rising energy costs, climate change, and higher demand due to population growth will only worsen the crisis. This module highlights why **behavioral change and technological adoption** — like smart leak detection, efficient appliances, and water-conscious habits — are essential to secure Bahrain’s water future.
-""",
-            "العربية": """
-تُعد البحرين من أكثر الدول عرضة للإجهاد المائي في العالم. حيث تتلقى البلاد أقل من **80 ملم من الأمطار سنويًا**، وهو ما لا يكفي لتلبية احتياجات سكانها. لعقود طويلة، اعتمدت البحرين على **طبقات المياه الجوفية** ومحطات **تحلية المياه** كمصادر رئيسية للشرب. تم استخراج المياه الجوفية بشكل مفرط، مما أدى إلى **تسرب الملوحة من البحر** وجعل الكثير منها غير صالح للاستخدام البشري. لذلك تعتمد البحرين الآن على التحلية لتوفير **أكثر من 90% من إمدادات المياه العذبة**.
-
-تعد التحلية فعالة، لكنها **تستهلك الطاقة كثيرًا وتكلف البيئة**. تشغيل محطات التحلية يتطلب كميات كبيرة من الوقود الأحفوري، مما يزيد من انبعاثات الغازات الدفيئة. بالإضافة إلى ذلك، تنتج عملية التحلية **نفايات مالحة** غالبًا ما تُصرف في البحر، مسببة ضررًا للنظم البيئية البحرية مثل الشعاب المرجانية، والتي تتعرض أصلاً للضغط نتيجة ارتفاع درجات حرارة المياه.
-
-تحدٍ آخر مهم هو **سلوك الاستهلاك**. يستخدم المواطن العادي في البحرين **250–300 لتر من المياه يوميًا**، أي ضعف المتوسط العالمي تقريبًا البالغ 150 لترًا. ويهدر جزء كبير من هذا الاستهلاك في الاستخدام المفرط في الأنشطة المنزلية، والأجهزة غير الفعالة، والتسربات غير المكتشفة. مع عدد سكان يقارب 1.5 مليون، هذا يعني أن البحرينيين يستخدمون مئات الملايين من اللترات يوميًا — وهو معدل غير مستدام بالنظر إلى الموارد المحدودة.
-
-يتوقع الخبراء أنه إذا استمرت الاتجاهات الحالية، فقد تواجه البحرين **نقصًا شديدًا في المياه بحلول عام 2050**، حتى مع الاعتماد على التحلية. وستزيد تكاليف الطاقة وارتفاع الطلب بسبب النمو السكاني وتغير المناخ من حدة الأزمة. تؤكد هذه الوحدة أهمية **التغيير السلوكي واعتماد التكنولوجيا** مثل اكتشاف التسربات الذكي، والأجهزة الموفرة، والعادات المائية الواعية لضمان مستقبل آمن للمياه في البحرين.
-""",
-            "Français": """
-Bahreïn est l’un des pays les plus stressés par le manque d’eau dans le monde. En moyenne, le pays reçoit moins de **80 mm de pluie par an**, ce qui est insuffisant pour répondre aux besoins de ses habitants. Depuis des décennies, Bahreïn dépend des **nappes phréatiques** et des **stations de dessalement** comme principales sources d’eau potable. Les nappes phréatiques ont été fortement surexploitées, entraînant une **intrusion de la salinité de la mer**, rendant une grande partie de l’eau inutilisable pour la consommation humaine. Par conséquent, Bahreïn s’appuie désormais sur le dessalement pour **plus de 90 % de son approvisionnement en eau douce**.
-
-Le dessalement, bien qu’efficace, est **très énergivore et coûteux pour l’environnement**. Alimenter les stations de dessalement nécessite de grandes quantités de combustibles fossiles, contribuant aux émissions de gaz à effet de serre. De plus, le processus génère des **déchets salins**, souvent rejetés en mer, ce qui nuit aux écosystèmes marins comme les récifs coralliens déjà sous pression due au réchauffement des eaux.
-
-Un autre défi majeur est **le comportement de consommation**. Un résident typique de Bahreïn utilise **250–300 litres d’eau par jour**, presque le double de la moyenne internationale de 150 litres. Une grande partie de cette consommation est gaspillée par la surutilisation dans les activités domestiques, les appareils inefficaces et les fuites non détectées. Avec une population d’environ 1,5 million, cela signifie que les Bahreïnis utilisent des centaines de millions de litres chaque jour — un rythme insoutenable compte tenu des ressources limitées.
-
-Les experts prévoient que si les tendances actuelles se poursuivent, Bahreïn pourrait faire face à des **pénuries d’eau graves d’ici 2050**, même avec le dessalement. L’augmentation des coûts énergétiques, le changement climatique et la croissance de la demande aggraveraient encore la crise. Ce module souligne pourquoi **le changement de comportement et l’adoption technologique** — comme la détection intelligente des fuites, les appareils efficaces et les habitudes de consommation responsables — sont essentiels pour garantir l’avenir de l’eau à Bahreïn.
-"""
-        },
-        "video": "https://www.youtube.com/watch?v=YFt3ONM7eH0"
-    }
-}
-
-        2: {
-            "title": {
-                "English": "♻️ Module 2: Smart Daily Practices",
-                "العربية": "♻️ الوحدة 2: ممارسات يومية ذكية",
-                "Français": "♻️ Module 2 : Pratiques quotidiennes intelligentes"
-            },
-            "content": {
-                "English": """Daily water-saving practices in Bahrain must go beyond simple awareness campaigns...""",
-                "العربية": """يجب أن تتجاوز ممارسات توفير المياه اليومية في البحرين الحملات التوعوية البسيطة...""",
-                "Français": """Les pratiques quotidiennes d’économie d’eau à Bahreïn doivent aller au-delà de simples campagnes de sensibilisation..."""
-            },
-            "video": {
-                "English": "https://www.youtube.com/watch?v=U6pAB4yQ58U",
-                "العربية": "https://www.youtube.com/watch?v=mi_K7eLNz_M",
-                "Français": "https://www.youtube.com/watch?v=zVZ2iK2dJdM"
-            }
-        },
-        3: {
-            "title": {
-                "English": "🔧 Module 3: Leak Prevention & Detection",
-                "العربية": "🔧 الوحدة 3: منع واكتشاف التسربات",
-                "Français": "🔧 Module 3 : Prévention et détection des fuites"
-            },
-            "content": {
-                "English": """One of the most overlooked yet impactful areas of water conservation in Bahrain is leak detection...""",
-                "العربية": """أحد أكثر المجالات التي يتم تجاهلها رغم تأثيرها الكبير في الحفاظ على المياه في البحرين هو اكتشاف التسربات...""",
-                "Français": """L’un des aspects les plus négligés mais pourtant impactants de la conservation de l’eau à Bahreïn est la détection des fuites..."""
-            },
-            "video": {
-                "English": "https://www.youtube.com/watch?v=HMblNYq69fg",
-                "العربية": "https://www.youtube.com/watch?v=mi_K7eLNz_M",
-                "Français": "https://www.youtube.com/watch?v=zVZ2iK2dJdM"
-            }
-        },
-        4: {
-            "title": {
-                "English": "🏢 Module 4: Industry & Community",
-                "العربية": "🏢 الوحدة 4: الصناعة والمجتمع",
-                "Français": "🏢 Module 4 : Industrie et communauté"
-            },
-            "content": {
-                "English": """While households play a critical role in conservation, industries, businesses, and communities in Bahrain are equally important...""",
-                "العربية": """بينما تلعب الأسر دورًا حيويًا في الحفاظ على المياه، فإن الصناعات والشركات والمجتمعات في البحرين لها أهمية مماثلة...""",
-                "Français": """Bien que les ménages jouent un rôle crucial dans la conservation, les industries, entreprises et communautés à Bahreïn sont tout aussi importantes..."""
-            },
-            "video": {
-                "English": "https://www.youtube.com/watch?v=zVZ2iK2dJdM",
-                "العربية": "https://www.youtube.com/watch?v=mi_K7eLNz_M",
-                "Français": "https://www.youtube.com/watch?v=zVZ2iK2dJdM"
-            }
-        },
-        5: {
-            "title": {
-                "English": "🚀 Module 5: The Future of Water in Bahrain",
-                "العربية": "🚀 الوحدة 5: مستقبل المياه في البحرين",
-                "Français": "🚀 Module 5 : L’avenir de l’eau à Bahreïn"
-            },
-            "content": {
-                "English": """Looking ahead, the future of water management in Bahrain will be shaped by technological innovation, policy reforms, and behavioral change...""",
-                "العربية": """بالنظر إلى المستقبل، فإن إدارة المياه في البحرين ستتأثر بالابتكار التكنولوجي والإصلاحات السياسية وتغيير السلوكيات...""",
-                "Français": """À l’avenir, la gestion de l’eau à Bahreïn sera façonnée par l’innovation technologique, les réformes politiques et le changement de comportement..."""
-            },
-            "video": {
-                "English": "https://www.youtube.com/watch?v=4rO4pYlQH5M",
-                "العربية": "https://www.youtube.com/watch?v=mi_K7eLNz_M",
-                "Français": "https://www.youtube.com/watch?v=zVZ2iK2dJdM"
-            }
-        }
-    }
-
-    total_modules = len(adult_modules)
-
-    if audience == "Adult":
-        current = adult_modules[st.session_state.module]
-        st.header(current["title"][lang])
-        st.write(current["content"][lang])
-        st.video(current["video"][lang])
-
-        # Mark module as completed
-        if st.button("✅ I finished this module"):
-            st.session_state.video_completed = True
-
-        # Navigation buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("⬅️ Back") and st.session_state.module > 1:
-                st.session_state.module -= 1
-                st.session_state.video_completed = False
-        with col2:
-            if st.button("➡️ Next") and st.session_state.video_completed and st.session_state.module < total_modules:
-                st.session_state.module += 1
-                st.session_state.video_completed = False
-
-        # Completion message
-        if st.session_state.module == total_modules and st.session_state.video_completed:
-            st.balloons()
-            st.success("🎉 Congratulations! You completed the WaterGuard Adult Course.")
-
-    else:  # Kid audience
-        st.subheader("🌟 Fun Water Saving Tips for Kids")
-        st.write("""
-        - Don’t leave the tap running when washing your hands.  
-        - Take short showers instead of baths.  
-        - Remind parents to fix leaks quickly.  
-        - Use a bucket to water plants instead of a hose.  
-        """)
-        st.video("https://www.youtube.com/watch?v=5J3cw4biWWo")
-        st.video("https://www.youtube.com/watch?v=nTcFXJT0Fsc")
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-
-
+    for i in range(len(testimonial_data_ar)):
+        emoji, name, email = profiles[i] #
