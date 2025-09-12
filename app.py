@@ -71,6 +71,16 @@ st.markdown("""
 .faq-answer {
     color: #000;
 }
+.anomaly-alert {
+    background-color: #fcebeb;
+    color: #9f2a2a;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #f5c6cb;
+    margin-top: 1rem;
+    font-weight: bold;
+    text-align: center;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1014,7 +1024,7 @@ with top_tabs[2]:
             "ar": "🚨 تم الكشف عن خلل استهلاك المياه اليوم!",
             "fr": "🚨 Une anomalie de consommation d'eau élevée a été détectée aujourd'hui !"
         }
-        st.warning(anomaly_warning_text[lang])
+        st.markdown(f'<div class="anomaly-alert">{anomaly_warning_text[lang]}</div>', unsafe_allow_html=True)
 
     # Water conservation tips
     tips_heading = {
