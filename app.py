@@ -23,11 +23,7 @@ import random
 import base64
 from streamlit.components.v1 import html
 import plotly.express as px
-import plotly.graph_objects as go
-from statsmodels.tsa.arima.model import ARIMA
 import json
-import warnings
-warnings.filterwarnings('ignore')
 
 # Set a consistent style for plots and the page config
 sns.set_style("whitegrid")
@@ -554,37 +550,8 @@ df['anomaly'] = df['anomaly'].map({1: 'Normal', -1: 'Anomaly'})
 
 # Severity classification
 df['severity'] = pd.cut(df['usage_liters'],
-                         bins=[-np.inf, 20, 40, np.inf],
-                         labels=['Low', 'Medium', 'High'])
-
-
-# ----------------------------
-# New "Predictive AI" function
-# ----------------------------
-@st.cache_data
-def run_prediction(data, forecast_hours=7 * 24):
-    """Trains an ARIMA model and generates a forecast."""
-    # Use the last 30 days of "normal" data for training the model
-    # We select a slice of the data that doesn't contain the randomly injected anomalies.
-    training_data = data.iloc[-30*24:-forecast_hours]
-    training_series = training_data['usage_liters']
-    
-    # Fit the ARIMA model (p=1, d=1, q=1 is a common starting point)
-    model = ARIMA(training_series, order=(1, 1, 1))
-    model_fit = model.fit()
-
-    # Generate the forecast
-    forecast = model_fit.forecast(steps=forecast_hours)
-
-    # Prepare a DataFrame for plotting
-    forecast_index = pd.date_range(
-        start=training_data['timestamp'].iloc[-1] + pd.Timedelta(hours=1),
-        periods=forecast_hours,
-        freq='H'
-    )
-    forecast_df = pd.DataFrame(forecast, index=forecast_index, columns=['predicted_usage'])
-    
-    return training_data, forecast_df
+                        bins=[-np.inf, 20, 40, np.inf],
+                        labels=['Low', 'Medium', 'High'])
 
 # ----------------------------
 # Top tabs: Course, Bahrain History, Dashboard
@@ -747,199 +714,449 @@ with top_tabs[0]:
 
         rewards_summary_heading = {
             "en": "### Rewards Summary",
-            "ar": "### ملخص المكافآت",
+            "ar": "### ملخص الجوائز",
             "fr": "### Résumé des récompenses"
         }
         st.markdown(rewards_summary_heading[lang])
-        rewards_summary_text = {
-            "en": f"You have earned a total of **{st.session_state.rewards} fils** (BHD {st.session_state.rewards/1000.0:.3f}) from completing the quizzes. Keep saving water and earning rewards!",
-            "ar": f"لقد حصلت على ما مجموعه **{st.session_state.rewards} فلس** (ب.د {st.session_state.rewards/1000.0:.3f}) من إكمال الاختبارات. استمر في توفير المياه وكسب المكافآت!",
-            "fr": f"Vous avez gagné un total de **{st.session_state.rewards} fils** (BHD {st.session_state.rewards/1000.0:.3f}) en terminant les quiz. Continuez à économiser l'eau et à gagner des récompenses !"
-        }
-        st.info(rewards_summary_text[lang])
 
+        total_earned_text = {
+            "en": f"Total earned: {st.session_state.rewards} fils (BHD {st.session_state.rewards/1000.0:.3f})",
+            "ar": f"المجموع المكتسب: {st.session_state.rewards} فلس (ب.د {st.session_state.rewards/1000.0:.3f})",
+            "fr": f"Total gagné : {st.session_state.rewards} fils (BHD {st.session_state.rewards/1000.0:.3f})"
+        }
+        st.write(total_earned_text[lang])
+
+        cert_text = f"WaterGuard Course Certificate\nUser: demo_user@example.com\nCompleted: YES\nScore Summary: {json.dumps(st.session_state.quiz_scores)}\nRewards (fils): {st.session_state.rewards}"
+        download_cert_text = {
+            "en": "Download Certificate (TXT)",
+            "ar": "تحميل الشهادة (TXT)",
+            "fr": "Télécharger le certificat (TXT)"
+        }
+        st.download_button(download_cert_text[lang], data=cert_text, file_name="waterguard_certificate.txt")
 
 # ----------------------------
-# Bahrain Water History Tab
+# Bahrain History Tab
 # ----------------------------
 with top_tabs[1]:
     header_text = {
-        "en": "💧 Bahrain's Water History",
-        "ar": "💧 تاريخ المياه في البحرين",
-        "fr": "💧 Histoire de l'eau à Bahreïn"
+        "en": "Bahrain Water: History & Future",
+        "ar": "تاريخ المياه في البحرين ومستقبلها",
+        "fr": "L'eau à Bahreïn : Histoire et Avenir"
     }
     st.header(header_text[lang])
-    content = {
-        "en": BAHRAIN_HISTORY_EN,
-        "ar": BAHRAIN_HISTORY_AR,
-        "fr": BAHRAIN_HISTORY_FR
-    }
-    st.markdown(f'<div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; color: #fff; font-size: 1.1rem; line-height: 1.6;">{content[lang]}</div>', unsafe_allow_html=True)
 
+    if lang == "en":
+        st.markdown(BAHRAIN_HISTORY_EN)
+    elif lang == "ar":
+        st.markdown(f"<div dir='rtl' style='text-align: right'>{BAHRAIN_HISTORY_AR}</div>", unsafe_allow_html=True)
+    else: # French
+        st.markdown(BAHRAIN_HISTORY_FR)
 
 # ----------------------------
-# Dashboard Tab
+# Dashboard Tab (main app content)
 # ----------------------------
 with top_tabs[2]:
-    dashboard_header = {
-        "en": "📊 Your WaterGuard Dashboard",
-        "ar": "📊 لوحة تحكم ووتر جارد الخاصة بك",
-        "fr": "📊 Votre Tableau de bord WaterGuard"
+    # ---------- INTRO SECTION ----------
+    intro_html = {
+        "en": """
+        <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem;
+        border-radius: 15px; max-width: 900px; margin: 1.5rem auto; color: #111;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma,
+        Geneva, Verdana, sans-serif;">
+        <h1 style="color: #023e8a; font-weight: 700;">💧 WaterGuard Prototype</h1>
+        <p style="font-size: 1.05rem; line-height: 1.5;">
+        WaterGuard is a smart AI-powered water monitoring prototype built for a residential home in Saar. It tracks daily water usage, detects abnormal spikes, and provides real-time alerts to help homeowners save water and reduce costs. By analyzing consumption habits, the system can identify subtle anomalies that might indicate a hidden leak or a faulty appliance. The intuitive dashboard offers a comprehensive view of your usage, allowing you to make informed decisions and adopt more sustainable behaviors. WaterGuard is more than just a monitor; it is a partner in responsible water management, contributing to both your budget and the preservation of this vital resource.
+        </p>
+        </div>
+        """,
+        "ar": """
+        <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem;
+        border-radius: 15px; max-width: 900px; margin: 1.5rem auto; color: #111; box-shadow:
+        0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma, Geneva, Verdana,
+        sans-serif; direction: rtl; text-align: right;">
+        <h1 style="color: #023e8a; font-weight: 700;">💧نموذج ووتر جارد</h1>
+        <p style="font-size: 1.05rem; line-height: 1.5;">
+        ووتر جارد هو نموذج ذكي لمراقبة استهلاك المياه في منزل سكني بمنطقة سار. يستخدم الذكاء الاصطناعي لتحليل البيانات وكشف أي استهلاك غير طبيعي، مما يساعد على تقليل الهدر وخفض الفواتير. من خلال تحليل عادات الاستهلاك، يمكن للنظام تحديد الأنماط الشاذة الدقيقة التي قد تشير إلى تسرب مخفي أو جهاز معطل. توفر لوحة التحكم سهلة الاستخدام نظرة عامة شاملة على استهلاكك، مما يتيح لك اتخاذ قرارات مستنيرة واتباع سلوكيات أكثر استدامة. ووتر جارد هو أكثر من مجرد جهاز مراقبة؛ إنه شريك في إدارة المياه بمسؤولية، مما يساهم في ميزانيتك وفي الحفاظ على هذا المورد الحيوي.
+        </p>
+        </div>
+        """,
+        "fr": """
+        <div style="background: rgba(255, 255, 255, 0.9); padding: 2rem;
+        border-radius: 15px; max-width: 900px; margin: 1.5rem auto; color: #111;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-family: 'Segoe UI', Tahoma,
+        Geneva, Verdana, sans-serif;">
+        <h1 style="color: #023e8a; font-weight: 700;">💧 Prototype WaterGuard</h1>
+        <p style="font-size: 1.05rem; line-height: 1.5;">
+        WaterGuard est un prototype de surveillance de l'eau intelligent alimenté par l'IA,
+        conçu pour une maison résidentielle à Saar. Il suit la consommation quotidienne
+        d'eau, détecte les pics anormaux et fournit des alertes en temps réel pour aider
+        les propriétaires à économiser l'eau et à réduire les coûts. En analysant les habitudes de consommation, le système peut identifier des anomalies subtiles qui pourraient indiquer une fuite cachée ou un appareil défectueux. Le tableau de bord intuitif offre une vue d'ensemble de votre consommation, vous permettant de prendre des décisions éclairées et d'adopter des comportements plus durables. WaterGuard est plus qu'un simple moniteur ; c'est un partenaire dans la gestion responsable de l'eau, contribuant à la fois à votre budget et à la préservation de cette ressource vitale.
+        </p>
+        </div>
+        """
     }
-    st.header(dashboard_header[lang])
-    
-    # Summary Cards
-    col1, col2, col3 = st.columns(3)
-    
-    daily_total = df['usage_liters'].iloc[-24:].sum()
-    monthly_total = df['usage_liters'].iloc[-30*24:].sum()
-    total_anomalies = (df['anomaly'] == 'Anomaly').sum()
+    st.markdown(intro_html[lang], unsafe_allow_html=True)
 
-    with col1:
-        card_daily_title = {"en": "Today's Usage", "ar": "استهلاك اليوم", "fr": "Consommation du jour"}
-        st.metric(card_daily_title[lang], f"{daily_total:.2f} L")
-    
-    with col2:
-        card_monthly_title = {"en": "Monthly Usage", "ar": "الاستهلاك الشهري", "fr": "Consommation mensuelle"}
-        st.metric(card_monthly_title[lang], f"{monthly_total:.2f} L")
+    # ---------- SIDEBAR SUMMARY ----------
+    sidebar_texts = {
+        "en": "📅 Select a day to view usage",
+        "ar": "📅 اختر اليوم لعرض الاستهلاك",
+        "fr": "📅 Sélectionnez un jour pour voir la consommation"
+    }
+    selected_day = st.sidebar.date_input(
+        sidebar_texts[lang],
+        value=df['date'].max(),
+        min_value=df['date'].min(),
+        max_value=df['date'].max()
+    )
+    df_day = df[df['date'] == selected_day]
+    day_usage = df_day['usage_liters'].sum()
+    daily_quota = 1500
+    remaining = max(daily_quota - day_usage, 0)
+    usage_ratio = day_usage / daily_quota
+    cost_per_liter = 0.000193
+    daily_cost = day_usage * cost_per_liter
 
-    with col3:
-        card_alerts_title = {"en": "Total Leak Alerts", "ar": "إجمالي تنبيهات التسرب", "fr": "Total des alertes de fuite"}
-        st.metric(card_alerts_title[lang], f"{total_anomalies} alerts")
+    sidebar_summary = {
+        "en": f"""
+        ## 💧 Daily Water Usage Summary
+        **Date:** {selected_day}
+        **Used:** {day_usage:,.0f} liters
+        **Remaining:** {remaining:,.0f} liters
+        **Quota:** {daily_quota} liters
+        **Estimated Cost:** BHD {daily_cost:.3f}
+        """,
+        "ar": f"""
+        ## 💧 ملخص استهلاك المياه اليومي
+        **التاريخ:** {selected_day}
+        **المستهلك:** {day_usage:,.0f} لتر
+        **المتبقي:** {remaining:,.0f} لتر
+        **الحصة اليومية:** {daily_quota} لتر
+        **التكلفة التقديرية:** {daily_cost:.3f} دينار بحريني
+        """,
+        "fr": f"""
+        ## 💧 Résumé de la consommation d'eau quotidienne
+        **Date :** {selected_day}
+        **Utilisé :** {day_usage:,.0f} litres
+        **Restant :** {remaining:,.0f} litres
+        **Quota :** {daily_quota} litres
+        **Coût estimé :** BHD {daily_cost:.3f}
+        """
+    }
+    st.sidebar.markdown(sidebar_summary[lang])
 
-    # Anomaly Alert Section
-    recent_anomalies = df[df['anomaly'] == 'Anomaly'].iloc[-1:]
-    if not recent_anomalies.empty:
-        anom_time = recent_anomalies.iloc[0]['timestamp']
-        anom_severity = recent_anomalies.iloc[0]['severity']
-        alert_text = {
-            "en": f"🚨 **High Risk Alert:** An unusual water usage spike was detected at {anom_time.strftime('%I:%M %p, %b %d')}. Severity: {anom_severity}",
-            "ar": f"🚨 **تنبيه عالي الخطورة:** تم رصد ارتفاع غير عادي في استهلاك المياه في {anom_time.strftime('%I:%M %p, %b %d')}. الشدة: {anom_severity}",
-            "fr": f"🚨 **Alerte Risque Élevé:** Un pic de consommation d'eau inhabituel a été détecté à {anom_time.strftime('%I:%M %p, %b %d')}. Gravité : {anom_severity}"
+    st.sidebar.progress(min(usage_ratio, 1.0))
+
+    # Alerts
+    high_usage_threshold = daily_quota * 0.9
+    if day_usage > high_usage_threshold:
+        alert_message = {
+            "en": "🚨 High water consumption detected today!",
+            "ar": "🚨 تم الكشف عن استهلاك مياه مرتفع اليوم!",
+            "fr": "🚨 Consommation d'eau élevée détectée aujourd'hui !"
         }
-        st.markdown(f'<div class="anomaly-alert">{alert_text[lang]}</div>', unsafe_allow_html=True)
-        
-    st.markdown("---")
-    
-    # ----------------------------
-    # New Predictive AI Visualization
-    # ----------------------------
-    predictive_header = {
-        "en": "🧠 Predictive Leak Analysis",
-        "ar": "🧠 تحليل التنبؤ بالتسرب",
-        "fr": "🧠 Analyse prédictive des fuites"
+        st.sidebar.warning(alert_message[lang])
+
+    # Anomalies table
+    anomaly_heading = {
+        "en": "## 🔍 Detected Anomalies (Possible Leaks or Spikes)",
+        "ar": "## 🔍 الأنماط الشاذة المكتشفة (تسريبات أو زيادات محتملة)",
+        "fr": "## 🔍 Anomalies détectées (fuites ou pics possibles)"
     }
-    predictive_caption = {
-        "en": "The AI model has learned your normal water usage patterns from the past 30 days and predicts what your usage will be. Any sharp deviations indicate a potential leak.",
-        "ar": "لقد تعلم نموذج الذكاء الاصطناعي أنماط استهلاكك الطبيعية للمياه من آخر 30 يومًا ويتنبأ بما سيكون عليه استهلاكك. أي انحرافات حادة تشير إلى تسرب محتمل.",
-        "fr": "Le modèle d'IA a appris vos habitudes de consommation d'eau normales des 30 derniers jours et prédit quelle sera votre consommation. Toute déviation brusque indique une fuite potentielle."
+    st.markdown(anomaly_heading[lang])
+
+    expander_label = {
+        "en": "Show Anomalies",
+        "ar": "إظهار الأنماط الشاذة",
+        "fr": "Afficher les anomalies"
     }
-    
-    st.subheader(predictive_header[lang])
-    st.write(predictive_caption[lang])
-    
-    # Get the data for prediction
-    training_data, forecast_df = run_prediction(df)
-    
-    # Combine training data and forecast for plotting
-    plot_data = pd.concat([training_data.set_index('timestamp')['usage_liters'], forecast_df['predicted_usage']])
-    plot_data = plot_data.reset_index()
-    plot_data.columns = ['timestamp', 'usage_liters']
-    
-    # Create Plotly figure
-    fig = go.Figure()
+    with st.expander(expander_label[lang]):
+        df_anomalies = df[df['anomaly'] == 'Anomaly']
+        anomaly_display = df_anomalies[['timestamp', 'usage_liters', 'severity']].copy()
+        anomaly_display['usage_liters'] = anomaly_display['usage_liters'].map(lambda x: f"{x:.2f}")
+        anomaly_display['severity'] = anomaly_display['severity'].astype(str)
+        st.dataframe(anomaly_display)
+        csv_anomaly = anomaly_display.to_csv(index=False)
+        download_button_label = {
+            "en": "Download Anomalies CSV",
+            "ar": "تحميل الأنماط الشاذة CSV",
+            "fr": "Télécharger les anomalies CSV"
+        }
+        st.download_button(
+            label=download_button_label[lang],
+            data=csv_anomaly,
+            file_name='waterguard_anomalies.csv',
+            mime='text/csv'
+        )
 
-    # Add Actual Usage trace
-    fig.add_trace(go.Scatter(
-        x=training_data['timestamp'], 
-        y=training_data['usage_liters'],
-        mode='lines', 
-        name='Actual Usage',
-        line=dict(color='#0275d8')
-    ))
+    # Usage visualization - hourly for selected day
+    df['time_str'] = df['timestamp'].dt.strftime('%H:%M')
+    df_day_hourly = df[df['date'] == selected_day]
 
-    # Add Forecasted Usage trace
-    fig.add_trace(go.Scatter(
-        x=forecast_df.index,
-        y=forecast_df['predicted_usage'],
-        mode='lines',
-        name='Predicted Usage',
-        line=dict(color='#28a745', dash='dash')
-    ))
+    hourly_heading = {
+        "en": f"## 📊 Hourly Water Usage for {selected_day}",
+        "ar": f"## 📊 استهلاك المياه الساعي ليوم {selected_day}",
+        "fr": f"## 📊 Consommation d'eau horaire pour le {selected_day}"
+    }
+    st.markdown(hourly_heading[lang])
 
-    # Mark anomalies as red dots
-    anomaly_df = df[df['anomaly'] == 'Anomaly'].iloc[-30*24:]
-    if not anomaly_df.empty:
-        fig.add_trace(go.Scatter(
-            x=anomaly_df['timestamp'],
-            y=anomaly_df['usage_liters'],
-            mode='markers',
-            name='Detected Leak',
-            marker=dict(color='red', size=8)
-        ))
+    fig1, ax1 = plt.subplots(figsize=(14, 6))
+    sns.lineplot(data=df_day_hourly, x='time_str', y='usage_liters', ax=ax1, label='Usage' if lang in ['en', 'fr'] else 'الاستهلاك')
+    sns.scatterplot(data=df_day_hourly[df_day_hourly['anomaly'] == 'Anomaly'],
+                    x='time_str', y='usage_liters',
+                    color='red', marker='X', s=60, label='Anomaly' if lang in ['en', 'fr'] else 'خلل', ax=ax1)
+    
+    xlabel_text = {
+        "en": "Time (HH:MM)",
+        "ar": "الوقت (ساعة:دقيقة)",
+        "fr": "Heure (HH:MM)"
+    }
+    ylabel_text = {
+        "en": "Liters",
+        "ar": "لتر",
+        "fr": "Litres"
+    }
+    title_text_plot1 = {
+        "en": f"Hourly Water Usage for {selected_day}",
+        "ar": f"استهلاك المياه الساعي ليوم {selected_day}",
+        "fr": f"Consommation d'eau horaire pour le {selected_day}"
+    }
 
-    # Update layout for a professional look
-    fig.update_layout(
-        title=dict(text='Water Usage: Past 30 Days & Next 7-Day Forecast', x=0.5, font=dict(color='white')),
-        xaxis_title='Date and Time',
-        yaxis_title='Water Usage (Liters)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        hovermode='x unified',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    ax1.set_xlabel(xlabel_text[lang])
+    ax1.set_ylabel(ylabel_text[lang])
+    ax1.set_title(title_text_plot1[lang])
+    ax1.tick_params(axis='x', rotation=45)
+    ax1.legend()
+    st.pyplot(fig1)
+
+    # Daily data for last year
+    df_daily = df.set_index('timestamp').resample('D')['usage_liters'].sum().reset_index()
+    daily_heading = {
+        "en": "## 📈 Daily Water Usage (Past Year)",
+        "ar": "## 📈 استهلاك المياه اليومي (السنة الماضية)",
+        "fr": "## 📈 Consommation d'eau quotidienne (Année passée)"
+    }
+    st.markdown(daily_heading[lang])
+
+    fig2, ax2 = plt.subplots(figsize=(14, 5))
+    sns.lineplot(data=df_daily, x='timestamp', y='usage_liters', ax=ax2)
+
+    xlabel_text2 = {
+        "en": "Date",
+        "ar": "التاريخ",
+        "fr": "Date"
+    }
+    ylabel_text2 = {
+        "en": "Liters",
+        "ar": "لتر",
+        "fr": "Litres"
+    }
+    title_text_plot2 = {
+        "en": "Daily Water Usage",
+        "ar": "استهلاك المياه اليومي",
+        "fr": "Consommation d'eau quotidienne"
+    }
+
+    ax2.set_xlabel(xlabel_text2[lang])
+    ax2.set_ylabel(ylabel_text2[lang])
+    ax2.set_title(title_text_plot2[lang])
+    ax2.tick_params(axis='x', rotation=45)
+    st.pyplot(fig2)
+
+    # Monthly data
+    df_monthly = df.set_index('timestamp').resample('M')['usage_liters'].sum().reset_index()
+    monthly_heading = {
+        "en": "## 📉 Monthly Water Usage (Past Year)",
+        "ar": "## 📉 استهلاك المياه الشهري (السنة الماضية)",
+        "fr": "## 📉 Consommation d'eau mensuelle (Année passée)"
+    }
+    st.markdown(monthly_heading[lang])
+
+    fig3, ax3 = plt.subplots(figsize=(14, 5))
+    sns.lineplot(data=df_monthly, x='timestamp', y='usage_liters', ax=ax3)
+
+    xlabel_text3 = {
+        "en": "Month",
+        "ar": "الشهر",
+        "fr": "Mois"
+    }
+    ylabel_text3 = {
+        "en": "Liters",
+        "ar": "لتر",
+        "fr": "Litres"
+    }
+    title_text_plot3 = {
+        "en": "Monthly Water Usage",
+        "ar": "استهلاك المياه الشهري",
+        "fr": "Consommation d'eau mensuelle"
+    }
+    ax3.set_xlabel(xlabel_text3[lang])
+    ax3.set_ylabel(ylabel_text3[lang])
+    ax3.set_title(title_text_plot3[lang])
+    ax3.tick_params(axis='x', rotation=45)
+    st.pyplot(fig3)
+
+    # Daily report download
+    download_report_heading = {
+        "en": "## 📥 Download Daily Usage Report",
+        "ar": "## 📥 تحميل تقرير الاستهلاك اليومي",
+        "fr": "## 📥 Télécharger le rapport de consommation quotidienne"
+    }
+    st.markdown(download_report_heading[lang])
+
+    daily_report_csv = df_day.to_csv(index=False)
+    download_report_button_label = {
+        "en": "Download Daily Report CSV",
+        "ar": "تحميل تقرير الاستهلاك اليومي CSV",
+        "fr": "Télécharger le rapport quotidien CSV"
+    }
+    st.download_button(
+        label=download_report_button_label[lang],
+        data=daily_report_csv,
+        file_name=f'daily_usage_{selected_day}.csv',
+        mime='text/csv'
     )
 
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.markdown("---")
+    # Real-time notification if anomaly present today
+    if "Anomaly" in df_day["anomaly"].values:
+        anomaly_warning_text = {
+            "en": "🚨 High water consumption anomaly detected today!",
+            "ar": "🚨 تم الكشف عن خلل استهلاك المياه اليوم!",
+            "fr": "🚨 Une anomalie de consommation d'eau élevée a été détectée aujourd'hui !"
+        }
+        st.markdown(f'<div class="anomaly-alert">{anomaly_warning_text[lang]}</div>', unsafe_allow_html=True)
 
-    # Existing charts for daily and weekly usage
-    with st.expander("Show Detailed Usage Graphs"):
-        # Daily Usage Plot
-        daily_df = df.groupby('date')['usage_liters'].sum().reset_index()
-        daily_df['date'] = pd.to_datetime(daily_df['date'])
-        fig_daily = px.bar(daily_df, x='date', y='usage_liters',
-                             title="Daily Water Consumption",
-                             labels={'date': 'Date', 'usage_liters': 'Usage (Liters)'})
-        st.plotly_chart(fig_daily, use_container_width=True)
-
-        # Hourly Usage Plot with Anomalies
-        fig_hourly = px.line(df, x='timestamp', y='usage_liters',
-                              title="Hourly Water Usage with Anomaly Detection",
-                              labels={'timestamp': 'Time', 'usage_liters': 'Usage (Liters)'},
-                              color='anomaly',
-                              color_discrete_map={'Normal': '#0275d8', 'Anomaly': 'red'})
-        fig_hourly.update_traces(marker=dict(size=4))
-        st.plotly_chart(fig_hourly, use_container_width=True)
-
-
-    # Testimonials
-    st.markdown("---")
-    testimonials_header = {
-        "en": "What Our Users Say",
-        "ar": "ماذا يقول مستخدمونا",
-        "fr": "Ce que disent nos utilisateurs"
+    # Water conservation tips
+    tips_heading = {
+        "en": "### 💡 Water Conservation Tips",
+        "ar": "### 💡 نصائح للحفاظ على المياه",
+        "fr": "### 💡 Conseils pour la conservation de l'eau"
     }
-    st.subheader(testimonials_header[lang])
-    
-    testimonial_cols = st.columns(3)
-    displayed_testimonials = random.sample(testimonial_data[lang], 3)
-    displayed_profiles = random.sample(profiles, 3)
-    
-    for i, col in enumerate(testimonial_cols):
-        with col:
-            profile = displayed_profiles[i]
-            emoji, name, email = profile
-            
+    st.markdown(tips_heading[lang])
+    tips_content = {
+        "en": """
+        - Fix leaks promptly to save water and money.
+        - Use water-efficient appliances and fixtures.
+        - Collect rainwater for irrigation.
+        - Turn off taps when not in use.
+        - Monitor your usage regularly to detect changes.
+        """,
+        "ar": """
+        - أصلح التسريبات بسرعة لتوفير المياه والمال.
+        - استخدم الأجهزة والتركيبات الموفرة للمياه.
+        - اجمع مياه الأمطار للري.
+        - أغلق الصنابير عند عدم الاستخدام.
+        - راقب استهلاكك للكشف عن التغيرات.
+        """,
+        "fr": """
+        - Réparez rapidement les fuites pour économiser de l'eau et de l'argent.
+        - Utilisez des appareils et des installations économes en eau.
+        - Récupérez l'eau de pluie pour l'irrigation.
+        - Fermez les robinets lorsqu'ils ne sont pas utilisés.
+        - Surveillez régulièrement votre consommation pour détecter les changements.
+        """
+    }
+    st.markdown(tips_content[lang])
+
+    # Testimonials section
+    st.markdown("---")
+    testimonials_heading = {
+        "en": "### What Our Users Say",
+        "ar": "### ماذا يقول مستخدمونا",
+        "fr": "### Ce que disent nos utilisateurs"
+    }
+    st.markdown(testimonials_heading[lang])
+
+    cols = st.columns(2)
+    for i, testimonial in enumerate(testimonial_data[lang]):
+        with cols[i % 2]:
+            profile_emoji, profile_name, profile_email = profiles[i]
             st.markdown(f"""
             <div class="testimonial-card">
-                <p>{displayed_testimonials[i]}</p>
+                <p>"{testimonial}"</p>
                 <div class="testimonial-profile">
-                    <span class="emoji">{emoji}</span>
+                    <span class="emoji">{profile_emoji}</span>
                     <div>
-                        <strong>{name}</strong>
+                        <strong>{profile_name}</strong>
+                        <p style="font-size: 0.8em; margin: 0; color: #555;">{profile_email}</p>
                     </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+
+    # FAQ
+    st.markdown("---")
+    faq_heading_html = {
+        "en": """
+        <div style="background: rgba(255, 255, 255, 0.9); padding: 1rem 1.5rem;
+        border-radius: 12px; margin-top: 1rem; color: #111;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <h2 style="color: #023e8a;">💧 WaterGuard FAQ</h2>
+        </div>
+        """,
+        "ar": """
+        <div style="background: rgba(255, 255, 255, 0.9); padding: 1rem 1.5rem;
+        border-radius: 12px; margin-top: 1rem; color: #111;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); direction: rtl; text-align: right;">
+        <h2 style="color: #023e8a;">💧 الأسئلة المتكررة - ووتر جارد</h2>
+        </div>
+        """,
+        "fr": """
+        <div style="background: rgba(255, 255, 255, 0.9); padding: 1rem 1.5rem;
+        border-radius: 12px; margin-top: 1rem; color: #111;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <h2 style="color: #023e8a;">💧 FAQ WaterGuard</h2>
+        </div>
+        """
+    }
+
+    faqs = {
+        "en": {
+            "How can I detect a water leak early?": "Use WaterGuard's anomaly detection alerts to spot unusual spikes.",
+            "What should I do if an anomaly is detected?": "Check for leaks or unusual water usage immediately.",
+            "Can WaterGuard monitor multiple locations?": "Yes, it supports tracking usage across various branches or sites.",
+            "How accurate is the anomaly detection?": "The system uses AI to detect 95% of irregular water usage patterns.",
+            "Is WaterGuard suitable for factories with large consumption?": "Yes, it manages high-volume water use and alerts for excess.",
+            "How often is water usage data updated?": "Data is updated hourly for precise monitoring and alerts.",
+            "Can I download daily usage reports?": "Yes, downloadable CSV reports are available for any selected day.",
+            "What cost savings can I expect?": "Early leak detection and usage optimization significantly reduce bills.",
+            "Does WaterGuard support multiple languages?": "Currently supports English, Arabic, and French interfaces.",
+            "Who do I contact for technical support?": "Contact support@waterguard.bh for all maintenance and help queries."
+        },
+        "ar": {
+            "كيف يمكنني اكتشاف تسريب المياه مبكرًا؟": "استخدم تنبيهات كشف الخلل من ووتر جارد لرصد الزيادات غير المعتادة.",
+            "ماذا أفعل إذا تم اكتشاف خلل؟": "تحقق فورًا من وجود تسريبات أو استهلاك غير طبيعي للمياه.",
+            "هل يمكن لووتر جارد مراقبة مواقع متعددة؟": "نعم، يدعم تتبع الاستهلاك عبر فروع أو مواقع مختلفة.",
+            "ما مدى دقة كشف الخلل؟": "يستخدم النظام الذكاء الاصطناعي لاكتشاف 95٪ من أنماط الاستهلاك غير الطبيعية.",
+            "هل ووتر جارد مناسب للمصانع ذات الاستهلاك الكبير؟": "نعم، يدير استهلاك المياه العالي ويرسل تنبيهات عند الزيادة.",
+            "كم مرة يتم تحديث بيانات استهلاك المياه؟": "يتم تحديث البيانات كل ساعة لمراقبة دقيقة وتنبيهات فورية.",
+            "هل يمكنني تحميل تقارير الاستهلاك اليومية؟": "نعم، تتوفر تقارير CSV قابلة للتحميل لأي يوم محدد.",
+            "ما مقدار التوفير المتوقع في التكاليف؟": "الكشف المبكر عن التسريبات وتحسين الاستخدام يقلل الفواتير بشكل كبير.",
+            "هل يدعم ووتر جارد لغات متعددة؟": "يدعم حاليًا واجهات باللغات الإنجليزية والعربية والفرنسية.",
+            "من أتصل به للدعم الفني؟": "تواصل مع support@waterguard.bh لجميع استفسارات الصيانة والمساعدة."
+        },
+        "fr": {
+            "Comment puis-je détecter une fuite d'eau tôt ?": "Utilisez les alertes de détection d'anomalies de WaterGuard pour repérer les pics inhabituels.",
+            "Que dois-je faire si une anomalie est détectée ?": "Vérifiez immédiatement les fuites ou la consommation d'eau inhabituelle.",
+            "WaterGuard peut-il surveiller plusieurs emplacements ?": "Oui, il prend en charge le suivi de la consommation sur plusieurs succursales ou sites.",
+            "Quelle est la précision de la détection des anomalies ?": "Le système utilise l'IA pour détecter 95 % des modèles de consommation d'eau irréguliers.",
+            "WaterGuard est-il adapté aux usines à forte consommation ?": "Oui, il gère la consommation d'eau à haut volume et alerte en cas d'excès.",
+            "À quelle fréquence les données de consommation d'eau sont-elles mises à jour ?": "Les données sont mises à jour toutes les heures pour une surveillance et des alertes précises.",
+            "Puis-je télécharger des rapports de consommation quotidiens ?": "Oui, des rapports CSV téléchargeables sont disponibles pour n'importe quel jour sélectionné.",
+            "À quelles économies de coûts puis-je m'attendre ?": "La détection précoce des fuites et l'optimisation de la consommation réduisent considérablement les factures.",
+            "WaterGuard prend-il en charge plusieurs langues ?": "Actuellement, il prend en charge les interfaces en anglais, arabe et français.",
+            "Qui dois-je contacter pour le support technique ?": "Contactez support@waterguard.bh pour toutes les questions de maintenance et d'assistance."
+        }
+    }
+
+    st.markdown(faq_heading_html[lang], unsafe_allow_html=True)
+
+    for q, a in faqs[lang].items():
+        st.markdown(f"""
+        <div style="background: rgba(255, 255, 255, 0.85);
+        padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 0.8rem;">
+        <strong style="color: #0077b6;">{q}</strong>
+        <p class="faq-answer" style="margin-top: 0.4rem;">{a}</p>
+        </div>
+        """, unsafe_allow_html=True)
