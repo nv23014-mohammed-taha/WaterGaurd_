@@ -21,7 +21,7 @@ st.set_page_config(page_title="WaterGuard", layout="wide")
 # Session state initial setup
 # ----------------------------
 if "lang" not in st.session_state:
-st.session_state.lang = "en" # Default to English
+    st.session_state.lang = "en"
 
 # Course / reward session state
 if "course_progress" not in st.session_state:
