@@ -1270,12 +1270,9 @@ if page == "Dashboard":
     st.write("This dashboard shows daily household water usage.")
 
 elif page == "Course":
-    st.title("📚 Water Conservation Course")
-    st.write("Interactive modules about saving water go here...")
+ 
 
 elif page == "History":
-    st.title("🏺 Historical Context of Water in Bahrain")
-    st.write("Information about Bahrain’s water history goes here...")
-
+    
 elif page == "Predictive Analysis":
     predictive_analysis(data)
