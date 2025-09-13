@@ -1197,7 +1197,15 @@ data = load_data()
 # Predictive Analysis Function
 # ---------------------------
 def predictive_analysis(df):
-    st.header("🔮 Predictive Analysis: Future Water Usage")
+    st.header("🔮 Predictive Analysis")
+
+    st.markdown(
+        """
+        Welcome to the **Predictive Analysis** section.  
+        Here we forecast your **future water usage** and estimate the **costs**  
+        based on your recent consumption trends.
+        """
+    )
 
     # Prepare data for Prophet
     df_prophet = df[['timestamp', 'usage']].rename(columns={'timestamp': 'ds', 'usage': 'y'})
@@ -1216,9 +1224,9 @@ def predictive_analysis(df):
     st.plotly_chart(fig1, use_container_width=True)
     
     # Plot components
-    st.subheader("📊 Forecast Components (Trend & Seasonality)")
-    fig2 = plot_components_plotly(model, forecast)
-    st.plotly_chart(fig2, use_container_width=True)
+    with st.expander("📊 View Forecast Components (Trend & Seasonality)"):
+        fig2 = plot_components_plotly(model, forecast)
+        st.plotly_chart(fig2, use_container_width=True)
 
     # Insights
     avg_future = forecast.tail(7)['yhat'].mean()
@@ -1226,9 +1234,26 @@ def predictive_analysis(df):
     change = ((avg_future - avg_past) / avg_past) * 100
 
     if change > 0:
-        st.info(f"🚰 Prediction: Water usage is expected to **increase by {change:.2f}%** compared to the last month.")
+        st.success(f"🚰 Water usage is expected to **increase by {change:.2f}%** compared to last month.")
     else:
-        st.info(f"💧 Prediction: Water usage is expected to **decrease by {abs(change):.2f}%** compared to the last month.")
+        st.info(f"💧 Water usage is expected to **decrease by {abs(change):.2f}%** compared to last month.")
+
+    # ---------------------------
+    # Cost Estimation
+    # ---------------------------
+    st.subheader("💲 Estimated Water Costs")
+
+    cost_per_liter = 0.002  # USD per liter (adjustable)
+    forecast['cost'] = forecast['yhat'] * cost_per_liter
+    future_cost = forecast.tail(7)['cost'].sum()
+
+    st.metric(
+        label="Estimated Weekly Water Cost",
+        value=f"${future_cost:.2f}",
+        delta=f"{change:.2f}% from last month"
+    )
+
+    st.caption(f"💡 Calculated at ${cost_per_liter:.3f} per liter.")
 
 # ---------------------------
 # Sidebar Navigation
