@@ -1160,3 +1160,97 @@ with top_tabs[2]:
         <p class="faq-answer" style="margin-top: 0.4rem;">{a}</p>
         </div>
         """, unsafe_allow_html=True)
+# -*- coding: utf-8 -*-
+"""WaterGuard App - Full version with Predictive Analysis added"""
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import IsolationForest
+import matplotlib.pyplot as plt
+import seaborn as sns
+import random
+import base64
+from streamlit.components.v1 import html
+import plotly.express as px
+import time
+import json
+from prophet import Prophet   # NEW
+from prophet.plot import plot_plotly, plot_components_plotly  # NEW
+
+sns.set_style("whitegrid")
+
+# ---------------------------
+# Simulate water usage dataset
+# ---------------------------
+@st.cache_data
+def load_data():
+    np.random.seed(42)
+    dates = pd.date_range(start="2023-01-01", periods=200, freq="D")
+    usage = np.random.normal(150, 20, size=len(dates))  # avg ~150 liters/day
+    df = pd.DataFrame({"timestamp": dates, "usage": usage})
+    return df
+
+data = load_data()
+
+# ---------------------------
+# Predictive Analysis Function
+# ---------------------------
+def predictive_analysis(df):
+    st.header("🔮 Predictive Analysis: Future Water Usage")
+
+    # Prepare data for Prophet
+    df_prophet = df[['timestamp', 'usage']].rename(columns={'timestamp': 'ds', 'usage': 'y'})
+    
+    # Train model
+    model = Prophet()
+    model.fit(df_prophet)
+    
+    # Forecast for next 7 days
+    future = model.make_future_dataframe(periods=7, freq='D')
+    forecast = model.predict(future)
+    
+    # Plot forecast
+    st.subheader("📈 Water Usage Forecast (Next 7 Days)")
+    fig1 = plot_plotly(model, forecast)
+    st.plotly_chart(fig1, use_container_width=True)
+    
+    # Plot components
+    st.subheader("📊 Forecast Components (Trend & Seasonality)")
+    fig2 = plot_components_plotly(model, forecast)
+    st.plotly_chart(fig2, use_container_width=True)
+
+    # Insights
+    avg_future = forecast.tail(7)['yhat'].mean()
+    avg_past = df['usage'].tail(30).mean()
+    change = ((avg_future - avg_past) / avg_past) * 100
+
+    if change > 0:
+        st.info(f"🚰 Prediction: Water usage is expected to **increase by {change:.2f}%** compared to the last month.")
+    else:
+        st.info(f"💧 Prediction: Water usage is expected to **decrease by {abs(change):.2f}%** compared to the last month.")
+
+# ---------------------------
+# Sidebar Navigation
+# ---------------------------
+st.sidebar.title("🌍 WaterGuard App")
+page = st.sidebar.radio("Navigate", ["Dashboard", "Course", "History", "Predictive Analysis"])
+
+# ---------------------------
+# Page Routing
+# ---------------------------
+if page == "Dashboard":
+    st.title("📊 Water Usage Dashboard")
+    st.line_chart(data.set_index("timestamp")["usage"])
+    st.write("This dashboard shows daily household water usage.")
+
+elif page == "Course":
+    st.title("📚 Water Conservation Course")
+    st.write("Interactive modules about saving water go here...")
+
+elif page == "History":
+    st.title("🏺 Historical Context of Water in Bahrain")
+    st.write("Information about Bahrain’s water history goes here...")
+
+elif page == "Predictive Analysis":
+    predictive_analysis(data)
