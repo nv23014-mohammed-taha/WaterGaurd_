@@ -1180,9 +1180,6 @@ from prophet.plot import plot_plotly, plot_components_plotly  # NEW
 
 sns.set_style("whitegrid")
 
-# ---------------------------
-# Simulate water usage dataset
-# ---------------------------
 @st.cache_data
 def load_data():
     np.random.seed(42)
@@ -1197,11 +1194,10 @@ data = load_data()
 # Predictive Analysis Function
 # ---------------------------
 def predictive_analysis(df):
-    st.header("🔮 Predictive Analysis")
+    st.subheader("🔮 Predictive Analysis")
 
     st.markdown(
         """
-        Welcome to the **Predictive Analysis** section.  
         Here we forecast your **future water usage** and estimate the **costs**  
         based on your recent consumption trends.
         """
@@ -1255,3 +1251,25 @@ def predictive_analysis(df):
 
     st.caption(f"💡 Calculated at ${cost_per_liter:.3f} per liter.")
 
+# ---------------------------
+# Main Dashboard Navigation
+# ---------------------------
+st.title("🌍 WaterGuard App")
+
+tabs = st.tabs(["📊 Dashboard", "📚 Course", "🏺 History", "🔮 Predictive Analysis"])
+
+with tabs[0]:
+    st.header("📊 Water Usage Dashboard")
+    st.line_chart(data.set_index("timestamp")["usage"])
+    st.write("This dashboard shows daily household water usage.")
+
+with tabs[1]:
+    st.header("📚 Water Conservation Course")
+    st.write("Interactive modules about saving water go here...")
+
+with tabs[2]:
+    st.header("🏺 Historical Context of Water in Bahrain")
+    st.write("Information about Bahrain’s water history goes here...")
+
+with tabs[3]:
+    predictive_analysis(data)
