@@ -554,15 +554,46 @@ df['severity'] = pd.cut(df['usage_liters'],
                         labels=['Low', 'Medium', 'High'])
 
 # ----------------------------
-# Top tabs: Course, Bahrain History, Dashboard
-# ----------------------------
 tab_labels = {
-    "en": ["Course", "Bahrain Water", "Dashboard"],
-    "ar": ["الدورة التدريبية", "تاريخ المياه في البحرين", "لوحة التحكم"],
-    "fr": ["Cours", "Eau à Bahreïn", "Tableau de bord"]
+    "en": ["Course", "Bahrain Water", "Dashboard", "Predictive Analysis"],
+    "ar": ["الدورة التدريبية", "تاريخ المياه في البحرين", "لوحة التحكم", "التحليل التنبؤي"],
+    "fr": ["Cours", "Eau à Bahreïn", "Tableau de bord", "Analyse prédictive"]
 }
 
 top_tabs = st.tabs(tab_labels[lang])
+
+# ----------------------------
+# Course Tab
+# ----------------------------
+with top_tabs[0]:
+    # (your existing course code stays the same here)
+    ...
+
+# ----------------------------
+# Bahrain History Tab
+# ----------------------------
+with top_tabs[1]:
+    header_text = {
+        "en": "Bahrain Water: History & Future",
+        "ar": "تاريخ المياه في البحرين ومستقبلها",
+        "fr": "L'eau à Bahreïn : Histoire et Avenir"
+    }
+    st.header(header_text[lang])
+
+    if lang == "en":
+        st.markdown(BAHRAIN_HISTORY_EN)
+    elif lang == "ar":
+        st.markdown(f"<div dir='rtl' style='text-align: right'>{BAHRAIN_HISTORY_AR}</div>", unsafe_allow_html=True)
+    else: # French
+        st.markdown(BAHRAIN_HISTORY_FR)
+
+# ----------------------------
+# Dashboard Tab
+# ----------------------------
+with top_tabs[2]:
+    st.header("📊 Water Usage Dashboard")
+    st.line_chart(data.set_index("timestamp")["usage"])
+    st.write("This dashboard shows daily household water usage.")
 
 # ----------------------------
 # Course Tab
