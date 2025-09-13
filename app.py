@@ -1255,24 +1255,3 @@ def predictive_analysis(df):
 
     st.caption(f"💡 Calculated at ${cost_per_liter:.3f} per liter.")
 
-# ---------------------------
-# Sidebar Navigation
-# ---------------------------
-st.sidebar.title("🌍 WaterGuard App")
-page = st.sidebar.radio("Navigate", ["Dashboard", "Course", "History", "Predictive Analysis"])
-
-# ---------------------------
-# Page Routing
-# ---------------------------
-if page == "Dashboard":
-    st.title("📊 Water Usage Dashboard")
-    st.line_chart(data.set_index("timestamp")["usage"])
-    st.write("This dashboard shows daily household water usage.")
-
-elif page == "Course":
- 
-
-elif page == "History":
-    
-elif page == "Predictive Analysis":
-    predictive_analysis(data)
