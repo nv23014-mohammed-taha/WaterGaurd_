@@ -1,169 +1,172 @@
-import streamlit as st
-import pandas as pd
+import csv
+import os
+from datetime import datetime
+from statistics import mean
 from collections import Counter
 
-# --- Helper functions ---
-DATA_FILE = "weather_data.csv"
+FILENAME = "Weather.csv"
 
-def load_data():
+# --------------------- LOAD AND SAVE DATA ---------------------
+
+def load_data(filename):
+    data = []
+    if os.path.exists(filename):
+        with open(filename, mode="r", newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                data.append(row)
+    return data
+
+
+def save_data(data, filename):
+    with open(filename, mode="w", newline="", encoding="utf-8") as file:
+        fieldnames = ["Date", "Temperature (°C)", "Condition", "Humidity (%)", "Wind Speed (km/h)"]
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(data)
+
+# --------------------- RECORD NEW OBSERVATION ---------------------
+
+def record_observation(data):
     try:
-        return pd.read_csv(DATA_FILE)
-    except FileNotFoundError:
-        return pd.DataFrame(columns=["Date", "Temperature", "Condition", "Humidity", "Wind"])
+        date = input("Enter date (MM-DD-YYYY): ")
+        datetime.strptime(date, "%m-%d-%Y")  # Validate format
 
-def save_data(data):
-    data.to_csv(DATA_FILE, index=False)
+        temp = float(input("Enter temperature (°C): "))
+        condition = input("Enter condition (Sunny, Cloudy, Rainy, etc.): ").capitalize()
+        humidity = float(input("Enter humidity (%): "))
+        wind_speed = float(input("Enter wind speed (km/h): "))
 
-def add_observation(date, temp, condition, humidity, wind):
-    new_entry = {
-        "Date": date,
-        "Temperature": temp,
-        "Condition": condition,
-        "Humidity": humidity,
-        "Wind": wind
-    }
-    data = load_data()
-    new_df = pd.DataFrame([new_entry])
-    data = pd.concat([data, new_df], ignore_index=True)  # Fixed append error
-    save_data(data)
-    st.success("✅ Observation added successfully!")
+        data.append({
+            "Date": date,
+            "Temperature (°C)": temp,
+            "Condition": condition,
+            "Humidity (%)": humidity,
+            "Wind Speed (km/h)": wind_speed
+        })
+        print("✅ Observation recorded successfully!")
+    except ValueError:
+        print("❌ Invalid input! Please try again.")
 
-def get_statistics(data):
-    if data.empty:
-        return None
-    avg_temp = data["Temperature"].mean()
-    min_temp = data["Temperature"].min()
-    max_temp = data["Temperature"].max()
-    most_common = Counter(data["Condition"]).most_common(1)[0][0]
-    return avg_temp, min_temp, max_temp, most_common
+# --------------------- VIEW STATISTICS ---------------------
 
-def predict_tomorrow(data):
-    if data.empty:
-        return "No data available"
-    latest_condition = data["Condition"].mode()[0]
-    latest_temp = data["Temperature"].mean()
-    return f"Predicted: {latest_condition}, Temp: {latest_temp:.1f}°C"
+def view_statistics(data):
+    if not data:
+        print("No data available.")
+        return
 
-# --- Streamlit App ---
-st.title("🌤️ Top-Tier Weather Tracker")
-st.write("Track local weather, analyze patterns, and predict the future!")
+    temps = [float(row["Temperature (°C)"]) for row in data]
+    avg_temp = mean(temps)
+    min_temp = min(temps)
+    max_temp = max(temps)
 
-menu = st.sidebar.selectbox("Menu", [
-    "Record a new weather observation",
-    "View weather statistics",
-    "Search observations by date",
-    "View all observations",
-    "Filter observations by month/season",
-    "Display temperature trends",
-    "Predict tomorrow's weather",
-    "Compare yearly data",
-    "Record-breaking temperatures/conditions"
-])
+    conditions = [row["Condition"] for row in data]
+    most_common = Counter(conditions).most_common(1)[0][0]
 
-data = load_data()
+    print("\n🌡️ Weather Statistics:")
+    print(f"Average Temperature: {avg_temp:.2f}°C")
+    print(f"Minimum Temperature: {min_temp:.2f}°C")
+    print(f"Maximum Temperature: {max_temp:.2f}°C")
+    print(f"Most Common Condition: {most_common}")
 
-# --- Record a new observation ---
-if menu == "Record a new weather observation":
-    st.header("📝 Add Observation")
-    date = st.date_input("Date")
-    temp = st.number_input("Temperature (°C)", value=25.0)
-    condition = st.selectbox("Weather Condition", ["Sunny", "Cloudy", "Rainy", "Snowy", "Stormy", "Windy"])
-    humidity = st.number_input("Humidity (%)", min_value=0, max_value=100, value=50)
-    wind = st.number_input("Wind Speed (km/h)", min_value=0, value=10)
-    
-    if st.button("Add Observation"):
-        add_observation(date.strftime("%m-%d-%Y"), temp, condition, humidity, wind)
+# --------------------- SEARCH BY DATE ---------------------
 
-# --- View statistics ---
-elif menu == "View weather statistics":
-    st.header("📊 Weather Statistics")
-    stats = get_statistics(data)
-    if stats:
-        avg_temp, min_temp, max_temp, most_common = stats
-        st.write(f"Average Temperature: {avg_temp:.1f}°C")
-        st.write(f"Minimum Temperature: {min_temp:.1f}°C")
-        st.write(f"Maximum Temperature: {max_temp:.1f}°C")
-        st.write(f"Most Common Condition: {most_common}")
+def search_by_date(data):
+    date = input("Enter date to search (MM-DD-YYYY): ")
+    results = [row for row in data if row["Date"] == date]
+
+    if results:
+        print(f"\n📅 Observations for {date}:")
+        for r in results:
+            print(r)
     else:
-        st.warning("No data available.")
+        print("No records found for that date.")
 
-# --- Search by date ---
-elif menu == "Search observations by date":
-    st.header("🔍 Search by Date")
-    search_date = st.date_input("Select Date")
-    filtered = data[data["Date"] == search_date.strftime("%m-%d-%Y")]
-    if filtered.empty:
-        st.warning("No observations found for this date.")
-    else:
-        st.dataframe(filtered)
+# --------------------- VIEW ALL OBSERVATIONS ---------------------
 
-# --- View all observations ---
-elif menu == "View all observations":
-    st.header("📋 All Observations")
-    if data.empty:
-        st.warning("No data available.")
-    else:
-        st.dataframe(data)
+def view_all(data):
+    if not data:
+        print("No observations recorded.")
+        return
 
-# --- Filter by month/season ---
-elif menu == "Filter observations by month/season":
-    st.header("🌦️ Filter Observations")
-    filter_type = st.radio("Filter by", ["Month", "Season"])
-    if data.empty:
-        st.warning("No data available.")
+    print("\n📋 All Observations:")
+    print(f"{'Date':<12} {'Temp(°C)':<10} {'Condition':<10} {'Humidity(%)':<12} {'Wind(km/h)':<10}")
+    print("-" * 60)
+    for row in data:
+        print(f"{row['Date']:<12} {row['Temperature (°C)']:<10} {row['Condition']:<10} "
+              f"{row['Humidity (%)']:<12} {row['Wind Speed (km/h)']:<10}")
+
+# --------------------- FILTER BY MONTH / SEASON ---------------------
+
+def filter_by_month_or_season(data):
+    choice = input("Filter by (M)onth or (S)eason? ").strip().lower()
+    if choice == 'm':
+        month = input("Enter month number (1-12): ").zfill(2)
+        filtered = [row for row in data if row["Date"].startswith(month)]
+    elif choice == 's':
+        season = input("Enter season (Winter, Spring, Summer, Autumn): ").capitalize()
+        months_by_season = {
+            "Winter": ["12", "01", "02"],
+            "Spring": ["03", "04", "05"],
+            "Summer": ["06", "07", "08"],
+            "Autumn": ["09", "10", "11"]
+        }
+        filtered = [row for row in data if row["Date"][:2] in months_by_season.get(season, [])]
     else:
-        data["Date_dt"] = pd.to_datetime(data["Date"])
-        if filter_type == "Month":
-            month = st.selectbox("Select Month", range(1, 13), format_func=lambda x: pd.to_datetime(f"2025-{x}-01").strftime('%B'))
-            filtered = data[data["Date_dt"].dt.month == month]
+        print("Invalid choice.")
+        return
+
+    if filtered:
+        print("\nFiltered Observations:")
+        for row in filtered:
+            print(row)
+    else:
+        print("No data found for selected period.")
+
+# --------------------- TEMPERATURE TREND GRAPH ---------------------
+
+def display_trend(data):
+    if not data:
+        print("No data available for trend.")
+        return
+    print("\n📈 Temperature Trend:")
+    for row in data:
+        bar = "*" * int(float(row["Temperature (°C)"]))
+        print(f"{row['Date']}: {bar}")
+
+# --------------------- MAIN PROGRAM ---------------------
+
+def main():
+    data = load_data(FILENAME)
+    while True:
+        print("\n🌤️ Weather Tracker Menu:")
+        print("1. Record a new observation")
+        print("2. View weather statistics")
+        print("3. Search observations by date")
+        print("4. View all observations")
+        print("5. Filter by month or season")
+        print("6. Display temperature trend")
+        print("7. Exit")
+
+        choice = input("Enter your choice: ").strip()
+        if choice == "1":
+            record_observation(data)
+        elif choice == "2":
+            view_statistics(data)
+        elif choice == "3":
+            search_by_date(data)
+        elif choice == "4":
+            view_all(data)
+        elif choice == "5":
+            filter_by_month_or_season(data)
+        elif choice == "6":
+            display_trend(data)
+        elif choice == "7":
+            save_data(data, FILENAME)
+            print("Data saved successfully. Exiting program. 👋")
+            break
         else:
-            season = st.selectbox("Select Season", ["Winter", "Spring", "Summer", "Autumn"])
-            month_to_season = {
-                "Winter": [12, 1, 2],
-                "Spring": [3, 4, 5],
-                "Summer": [6, 7, 8],
-                "Autumn": [9, 10, 11]
-            }
-            filtered = data[data["Date_dt"].dt.month.isin(month_to_season[season])]
-        if filtered.empty:
-            st.warning("No data available for the selected filter.")
-        else:
-            st.dataframe(filtered)
+            print("Invalid choice. Please try again.")
 
-# --- Display temperature trends ---
-elif menu == "Display temperature trends":
-    st.header("📈 Temperature Trends")
-    if data.empty:
-        st.warning("No data available.")
-    else:
-        st.line_chart(data.set_index(pd.to_datetime(data["Date"]))["Temperature"])
-
-# --- Predict tomorrow's weather ---
-elif menu == "Predict tomorrow's weather":
-    st.header("🔮 Tomorrow's Weather Prediction")
-    prediction = predict_tomorrow(data)
-    st.write(prediction)
-
-# --- Compare yearly data ---
-elif menu == "Compare yearly data":
-    st.header("📅 Yearly Data Comparison")
-    if data.empty:
-        st.warning("No data available.")
-    else:
-        data["Year"] = pd.to_datetime(data["Date"]).dt.year
-        yearly_avg = data.groupby("Year")["Temperature"].mean()
-        st.bar_chart(yearly_avg)
-
-# --- Record-breaking temperatures/conditions ---
-elif menu == "Record-breaking temperatures/conditions":
-    st.header("🏆 Record-Breaking Data")
-    if data.empty:
-        st.warning("No data available.")
-    else:
-        max_temp = data["Temperature"].max()
-        min_temp = data["Temperature"].min()
-        st.write(f"Highest Temperature Recorded: {max_temp}°C")
-        st.write(f"Lowest Temperature Recorded: {min_temp}°C")
-        st.write("Extreme Weather Conditions:")
-        extreme_conditions = data[data["Condition"].isin(["Stormy", "Snowy"])]
-        st.dataframe(extreme_conditions)
+if __name__ == "__main__":
+    main()
