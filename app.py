@@ -1,103 +1,129 @@
 import streamlit as st
 import pandas as pd
-from collections import Counter
+import matplotlib.pyplot as plt
+from datetime import datetime
+import os
 
-# --- Helper functions ---
-DATA_FILE = "weather_data.csv"
+# ----------------------------
+# CONFIGURATION
+# ----------------------------
+st.set_page_config(page_title="🌤️ Weather Tracker", layout="centered")
+
+st.markdown("""
+    <style>
+    .main { background-color: #f0f8ff; }
+    h1, h2, h3 { color: #004d99; text-align: center; }
+    .stButton>button {
+        background-color: #007acc;
+        color: white;
+        border-radius: 10px;
+        height: 50px;
+        width: 100%;
+        font-size: 18px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ----------------------------
+# FILE HANDLING
+# ----------------------------
+FILE_PATH = "weather_data.csv"
 
 def load_data():
-    try:
-        return pd.read_csv(DATA_FILE)
-    except FileNotFoundError:
-        return pd.DataFrame(columns=["Date", "Temperature", "Condition", "Humidity", "Wind"])
+    if os.path.exists(FILE_PATH):
+        return pd.read_csv(FILE_PATH)
+    else:
+        return pd.DataFrame(columns=["Date", "Temperature (°C)", "Condition", "Humidity (%)", "Wind Speed (km/h)"])
 
-def save_data(data):
-    data.to_csv(DATA_FILE, index=False)
+def save_data(df):
+    df.to_csv(FILE_PATH, index=False)
 
-def add_observation(date, temp, condition, humidity, wind):
-    new_entry = {
-        "Date": date,
-        "Temperature": temp,
-        "Condition": condition,
-        "Humidity": humidity,
-        "Wind": wind
-    }
-    data = load_data()
-    new_df = pd.DataFrame([new_entry])
-    data = pd.concat([data, new_df], ignore_index=True)  # Fixed append error
-    save_data(data)
-    st.success("✅ Observation added successfully!")
+data = load_data()
 
-def get_statistics(data):
-    if data.empty:
-        return None
-    avg_temp = data["Temperature"].mean()
-    min_temp = data["Temperature"].min()
-    max_temp = data["Temperature"].max()
-    most_common = Counter(data["Condition"]).most_common(1)[0][0]
-    return avg_temp, min_temp, max_temp, most_common
-
-def predict_tomorrow(data):
-    if data.empty:
-        return "No data available"
-    latest_condition = data["Condition"].mode()[0]
-    latest_temp = data["Temperature"].mean()
-    return f"Predicted: {latest_condition}, Temp: {latest_temp:.1f}°C"
-
-# --- Streamlit App ---
+# ----------------------------
+# PAGE TITLE
+# ----------------------------
 st.title("🌤️ Top-Tier Weather Tracker")
-st.write("Track local weather, analyze patterns, and predict the future!")
+st.write("Track local weather, analyze patterns, and predict future conditions!")
 
-menu = st.sidebar.selectbox("Menu", [
+# ----------------------------
+# MENU
+# ----------------------------
+menu = st.sidebar.radio("📋 Menu", [
     "Record a new weather observation",
     "View weather statistics",
     "Search observations by date",
     "View all observations",
-    "Filter observations by month/season",
+    "Filter by month or season",
     "Display temperature trends",
     "Predict tomorrow's weather",
     "Compare yearly data",
-    "Record-breaking temperatures/conditions"
+    "Record-breaking temperatures"
 ])
 
-data = load_data()
-
-# --- Record a new observation ---
+# ----------------------------
+# RECORD OBSERVATION
+# ----------------------------
 if menu == "Record a new weather observation":
-    st.header("📝 Add Observation")
-    date = st.date_input("Date")
-    temp = st.number_input("Temperature (°C)", value=25.0)
-    condition = st.selectbox("Weather Condition", ["Sunny", "Cloudy", "Rainy", "Snowy", "Stormy", "Windy"])
-    humidity = st.number_input("Humidity (%)", min_value=0, max_value=100, value=50)
-    wind = st.number_input("Wind Speed (km/h)", min_value=0, value=10)
-    
-    if st.button("Add Observation"):
-        add_observation(date.strftime("%m-%d-%Y"), temp, condition, humidity, wind)
+    st.header("🌦️ Record a New Observation")
+    with st.form("observation_form"):
+        date = st.text_input("Enter date (MM-DD-YYYY):")
+        temp = st.number_input("Temperature (°C):", -50.0, 60.0, step=0.1)
+        condition = st.selectbox("Weather Condition:", ["Sunny", "Cloudy", "Rainy", "Snowy", "Windy", "Stormy", "Foggy"])
+        humidity = st.number_input("Humidity (%):", 0, 100)
+        wind = st.number_input("Wind Speed (km/h):", 0.0, 300.0, step=0.1)
+        submit = st.form_submit_button("Save Observation")
 
-# --- View statistics ---
+    if submit:
+        try:
+            datetime.strptime(date, "%m-%d-%Y")  # validate date format
+            new_entry = pd.DataFrame({
+                "Date": [date],
+                "Temperature (°C)": [temp],
+                "Condition": [condition],
+                "Humidity (%)": [humidity],
+                "Wind Speed (km/h)": [wind]
+            })
+            data = pd.concat([data, new_entry], ignore_index=True)
+            save_data(data)
+            st.success("✅ Observation recorded successfully!")
+        except ValueError:
+            st.error("❌ Invalid date format! Please use MM-DD-YYYY.")
+
+# ----------------------------
+# VIEW STATISTICS
+# ----------------------------
 elif menu == "View weather statistics":
     st.header("📊 Weather Statistics")
-    stats = get_statistics(data)
-    if stats:
-        avg_temp, min_temp, max_temp, most_common = stats
-        st.write(f"Average Temperature: {avg_temp:.1f}°C")
-        st.write(f"Minimum Temperature: {min_temp:.1f}°C")
-        st.write(f"Maximum Temperature: {max_temp:.1f}°C")
-        st.write(f"Most Common Condition: {most_common}")
+    if data.empty:
+        st.warning("No data available yet.")
     else:
-        st.warning("No data available.")
+        avg_temp = data["Temperature (°C)"].mean()
+        min_temp = data["Temperature (°C)"].min()
+        max_temp = data["Temperature (°C)"].max()
+        common_cond = data["Condition"].mode()[0]
 
-# --- Search by date ---
+        st.metric("🌡️ Average Temperature", f"{avg_temp:.2f} °C")
+        st.metric("🥶 Minimum Temperature", f"{min_temp:.2f} °C")
+        st.metric("🥵 Maximum Temperature", f"{max_temp:.2f} °C")
+        st.metric("☁️ Most Common Condition", common_cond)
+
+# ----------------------------
+# SEARCH BY DATE
+# ----------------------------
 elif menu == "Search observations by date":
     st.header("🔍 Search by Date")
-    search_date = st.date_input("Select Date")
-    filtered = data[data["Date"] == search_date.strftime("%m-%d-%Y")]
-    if filtered.empty:
-        st.warning("No observations found for this date.")
-    else:
-        st.dataframe(filtered)
+    search_date = st.text_input("Enter date (MM-DD-YYYY):")
+    if st.button("Search"):
+        result = data[data["Date"] == search_date]
+        if result.empty:
+            st.warning("No observations found for this date.")
+        else:
+            st.dataframe(result)
 
-# --- View all observations ---
+# ----------------------------
+# VIEW ALL OBSERVATIONS
+# ----------------------------
 elif menu == "View all observations":
     st.header("📋 All Observations")
     if data.empty:
@@ -105,65 +131,82 @@ elif menu == "View all observations":
     else:
         st.dataframe(data)
 
-# --- Filter by month/season ---
-elif menu == "Filter observations by month/season":
-    st.header("🌦️ Filter Observations")
-    filter_type = st.radio("Filter by", ["Month", "Season"])
+# ----------------------------
+# FILTER BY MONTH OR SEASON
+# ----------------------------
+elif menu == "Filter by month or season":
+    st.header("📆 Filter Observations")
     if data.empty:
         st.warning("No data available.")
     else:
-        data["Date_dt"] = pd.to_datetime(data["Date"])
+        data["Date_dt"] = pd.to_datetime(data["Date"], format="%m-%d-%Y", errors="coerce")
+        filter_type = st.radio("Filter by:", ["Month", "Season"])
+
         if filter_type == "Month":
-            month = st.selectbox("Select Month", range(1, 13), format_func=lambda x: pd.to_datetime(f"2025-{x}-01").strftime('%B'))
+            month = st.selectbox("Select Month:", range(1, 13), format_func=lambda x: datetime(2025, x, 1).strftime("%B"))
             filtered = data[data["Date_dt"].dt.month == month]
         else:
-            season = st.selectbox("Select Season", ["Winter", "Spring", "Summer", "Autumn"])
-            month_to_season = {
-                "Winter": [12, 1, 2],
-                "Spring": [3, 4, 5],
-                "Summer": [6, 7, 8],
-                "Autumn": [9, 10, 11]
-            }
-            filtered = data[data["Date_dt"].dt.month.isin(month_to_season[season])]
+            season = st.selectbox("Select Season:", ["Winter", "Spring", "Summer", "Autumn"])
+            season_months = {"Winter": [12, 1, 2], "Spring": [3, 4, 5], "Summer": [6, 7, 8], "Autumn": [9, 10, 11]}
+            filtered = data[data["Date_dt"].dt.month.isin(season_months[season])]
+
         if filtered.empty:
-            st.warning("No data available for the selected filter.")
+            st.warning("No data for selected period.")
         else:
             st.dataframe(filtered)
 
-# --- Display temperature trends ---
+# ----------------------------
+# TEMPERATURE TRENDS
+# ----------------------------
 elif menu == "Display temperature trends":
     st.header("📈 Temperature Trends")
     if data.empty:
         st.warning("No data available.")
     else:
-        st.line_chart(data.set_index(pd.to_datetime(data["Date"]))["Temperature"])
+        data["Date_dt"] = pd.to_datetime(data["Date"], format="%m-%d-%Y", errors="coerce")
+        data = data.sort_values("Date_dt")
+        plt.figure(figsize=(8,4))
+        plt.plot(data["Date_dt"], data["Temperature (°C)"], marker='o')
+        plt.title("Temperature Trend Over Time")
+        plt.xlabel("Date")
+        plt.ylabel("Temperature (°C)")
+        st.pyplot(plt)
 
-# --- Predict tomorrow's weather ---
+# ----------------------------
+# PREDICT TOMORROW'S WEATHER
+# ----------------------------
 elif menu == "Predict tomorrow's weather":
-    st.header("🔮 Tomorrow's Weather Prediction")
-    prediction = predict_tomorrow(data)
-    st.write(prediction)
+    st.header("🤖 Predict Tomorrow's Weather")
+    if data.empty:
+        st.warning("No data to predict from.")
+    else:
+        last_temp = data["Temperature (°C)"].iloc[-1]
+        avg_change = data["Temperature (°C)"].diff().mean()
+        predicted_temp = last_temp + avg_change
+        st.metric("🌡️ Predicted Temperature", f"{predicted_temp:.2f} °C")
+        st.write("Condition likely:", data["Condition"].mode()[0])
 
-# --- Compare yearly data ---
+# ----------------------------
+# COMPARE YEARLY DATA
+# ----------------------------
 elif menu == "Compare yearly data":
-    st.header("📅 Yearly Data Comparison")
+    st.header("📆 Compare Yearly Data")
     if data.empty:
         st.warning("No data available.")
     else:
-        data["Year"] = pd.to_datetime(data["Date"]).dt.year
-        yearly_avg = data.groupby("Year")["Temperature"].mean()
-        st.bar_chart(yearly_avg)
+        data["Date_dt"] = pd.to_datetime(data["Date"], format="%m-%d-%Y", errors="coerce")
+        data["Year"] = data["Date_dt"].dt.year
+        yearly_stats = data.groupby("Year")["Temperature (°C)"].mean()
+        st.bar_chart(yearly_stats)
 
-# --- Record-breaking temperatures/conditions ---
-elif menu == "Record-breaking temperatures/conditions":
-    st.header("🏆 Record-Breaking Data")
+# ----------------------------
+# RECORD-BREAKING CONDITIONS
+# ----------------------------
+elif menu == "Record-breaking temperatures":
+    st.header("🏆 Record-Breaking Conditions")
     if data.empty:
         st.warning("No data available.")
     else:
-        max_temp = data["Temperature"].max()
-        min_temp = data["Temperature"].min()
-        st.write(f"Highest Temperature Recorded: {max_temp}°C")
-        st.write(f"Lowest Temperature Recorded: {min_temp}°C")
-        st.write("Extreme Weather Conditions:")
-        extreme_conditions = data[data["Condition"].isin(["Stormy", "Snowy"])]
-        st.dataframe(extreme_conditions)
+        st.write(f"🔥 Highest Temperature: {data['Temperature (°C)'].max()} °C")
+        st.write(f"❄️ Lowest Temperature: {data['Temperature (°C)'].min()} °C")
+        st.write(f"💨 Highest Wind Speed: {data['Wind Speed (km/h)'].max()} km/h")
