@@ -7,8 +7,9 @@ seaborn
 plotly
 prophet
 kagglehub
-cv2
+opencv-python-headless
 os
+
 
 
 
