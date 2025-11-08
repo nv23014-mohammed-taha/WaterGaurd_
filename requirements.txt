@@ -6,6 +6,8 @@ matplotlib
 seaborn
 plotly
 prophet
+kagglehub
+
 
 
 
