@@ -1,3 +1,147 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import datetime
+import base64
+
+# ------------------------------
+# 🎨 CUSTOM HTML + CSS TOP NAVBAR
+# ------------------------------
+st.markdown("""
+    <style>
+    /* Hide default Streamlit elements */
+    #MainMenu, footer, header {visibility: hidden;}
+
+    /* Top navigation bar styling */
+    .topnav {
+      background-color: #004aad;
+      overflow: hidden;
+      border-radius: 0px 0px 15px 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .topnav a {
+      float: left;
+      color: white;
+      text-align: center;
+      padding: 16px 26px;
+      text-decoration: none;
+      font-size: 17px;
+      transition: background 0.3s;
+    }
+
+    .topnav a:hover {
+      background-color: #1b6ef3;
+      color: white;
+    }
+
+    .topnav a.active {
+      background-color: #012a73;
+      color: white;
+      font-weight: bold;
+    }
+
+    h1 {
+      color: #004aad;
+      text-align: center;
+      padding-top: 10px;
+    }
+
+    .dataframe th, .dataframe td {
+      text-align: center;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ------------------------------
+# 🧭 TOP NAVIGATION
+# ------------------------------
+st.markdown("""
+<div class="topnav">
+  <a href="?page=Home" class="active">🏠 Home</a>
+  <a href="?page=Statistics">📊 Statistics</a>
+  <a href="?page=About">ℹ️ About</a>
+</div>
+""", unsafe_allow_html=True)
+
+# Get page from query
+query_params = st.query_params
+page = query_params.get("page", ["Home"])[0]
+
+# ------------------------------
+# 📆 CREATE 1-YEAR WEATHER DATASET
+# ------------------------------
+def generate_weather_data():
+    np.random.seed(42)
+    start_date = datetime.date(2024, 1, 1)
+    end_date = datetime.date(2024, 12, 31)
+    dates = pd.date_range(start_date, end_date)
+
+    temps = np.random.normal(28, 5, len(dates))
+    humidity = np.random.randint(40, 95, len(dates))
+    wind_speed = np.random.uniform(0.5, 7.5, len(dates))
+    conditions = np.random.choice(
+        ['Sunny', 'Cloudy', 'Rainy', 'Stormy', 'Foggy'], len(dates)
+    )
+
+    df = pd.DataFrame({
+        'Date': dates,
+        'Temperature (°C)': temps.round(1),
+        'Humidity (%)': humidity,
+        'Wind Speed (m/s)': wind_speed.round(2),
+        'Condition': conditions
+    })
+    return df
+
+weather_df = generate_weather_data()
+
+# ------------------------------
+# 🏠 HOME PAGE
+# ------------------------------
+if page == "Home":
+    st.title("🌦️ Weather Tracker Dashboard")
+    st.markdown("### Welcome to your annual weather tracking system!")
+
+    st.write("Use this tool to explore and analyze one year of synthetic weather data.")
+    st.dataframe(weather_df.head(10))
+
+# ------------------------------
+# 📊 STATISTICS PAGE
+# ------------------------------
+elif page == "Statistics":
+    st.title("📊 Weather Data Statistics")
+    st.markdown("### Visualize and Explore Trends")
+
+    st.write("#### Summary Statistics")
+    st.write(weather_df.describe())
+
+    st.line_chart(weather_df.set_index('Date')[['Temperature (°C)', 'Humidity (%)']])
+
+    condition_counts = weather_df['Condition'].value_counts()
+    st.bar_chart(condition_counts)
+
+# ------------------------------
+# ℹ️ ABOUT PAGE
+# ------------------------------
+elif page == "About":
+    st.title("ℹ️ About This Application")
+    st.markdown("""
+    This web application was created with **Streamlit** and enhanced using **custom HTML/CSS**.
+    
+    - **Purpose:** Display and analyze yearly weather data  
+    - **Features:**
+        - Interactive charts  
+        - Clean top navigation bar  
+        - Built-in dataset for 2024  
+        - No sidebar — full-screen layout for a modern feel
+    
+    💡 Built by Mohammed Taha.
+    """)
+
+# ------------------------------
+# END OF APP
+# ------------------------------
+
 import kagglehub
 vijaygiitk_multiclass_weather_dataset_path = kagglehub.dataset_download('vijaygiitk/multiclass-weather-dataset')
 
