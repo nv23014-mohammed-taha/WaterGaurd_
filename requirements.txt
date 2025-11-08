@@ -7,29 +7,12 @@ seaborn
 plotly
 prophet
 kagglehub
-cv2
-opencv-python-headless
 opencv-python
 opencv-contrib-python
 pygments==2.19.2
 mdurl==0.1.2
 markdown-it-py==4.0.0
 rich==14.2.0
-opencv-python
-pygments==2.19.2
-mdurl==0.1.2
-markdown-it-py==4.0.0
-rich==14.2.0
-opencv-contrib-python
-
-os
-
-
-
-
-
-
-
 
 
 
