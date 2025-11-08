@@ -9,8 +9,11 @@ prophet
 kagglehub
 cv2
 opencv-python-headless
+opencv-python
+opencv-contrib-python
 
 os
+
 
 
 
