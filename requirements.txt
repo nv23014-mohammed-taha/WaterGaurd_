@@ -7,8 +7,10 @@ seaborn
 plotly
 prophet
 kagglehub
-opencv-python-headless
+pip install opencv-python-headless
+
 os
+
 
 
 
